@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Eco.Core">
+      <HintPath>..\eco-dlls\Eco.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Gameplay">
+      <HintPath>..\eco-dlls\Eco.Gameplay.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.ModKit">
+      <HintPath>..\eco-dlls\Eco.ModKit.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Plugins">
+      <HintPath>..\eco-dlls\Eco.Plugins.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Shared">
+      <HintPath>..\eco-dlls\Eco.Shared.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
