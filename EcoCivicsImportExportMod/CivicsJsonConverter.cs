@@ -104,9 +104,17 @@ namespace Eco.Mods.CivicsImpExp
             {
                 return SerialiseList(enumerableValue);
             }
+            else if (value is IGameValueContext gameValueContext)
+            {
+                return SerialiseGameValueContext(gameValueContext);
+            }
             else if (value is GameValue gameValue)
             {
                 return SerialiseGameValue(gameValue);
+            }
+            else if (value.GetType().IsEnum)
+            {
+                return value.GetType().GetEnumName(value);
             }
             var jsonObj = new JObject();
             jsonObj.Add(new JProperty("type", "unknown"));
@@ -115,7 +123,7 @@ namespace Eco.Mods.CivicsImpExp
             return jsonObj;
         }
 
-        private object SerialiseObjectReference(INamed value)
+        private JObject SerialiseObjectReference(INamed value)
         {
             var jsonObj = new JObject();
             jsonObj.Add(new JProperty("type", value.GetType().Name));
@@ -123,7 +131,7 @@ namespace Eco.Mods.CivicsImpExp
             return jsonObj;
         }
 
-        private object SerialiseList(IEnumerable enumerableValue)
+        private JArray SerialiseList(IEnumerable enumerableValue)
         {
             var jsonArr = new JArray();
             foreach (object value in enumerableValue)
@@ -133,10 +141,28 @@ namespace Eco.Mods.CivicsImpExp
             return jsonArr;
         }
 
-        private object SerialiseGameValue(GameValue gameValue)
+        private JObject SerialiseGameValue(GameValue gameValue)
         {
-            var jsonObj = SerialiseCivicObject(gameValue);
-            jsonObj.AddFirst(new JProperty("type", gameValue.GetType().Name));
+            var jsonObj = new JObject();
+            if (gameValue.GetType().IsConstructedGenericType && gameValue.GetType().GetGenericTypeDefinition() == typeof(GameValueWrapper<>))
+            {
+                jsonObj.Add(new JProperty("type", "GameValueWrapper"));
+                object wrappedValue = gameValue.GetType().GetProperty("Object", BindingFlags.Public | BindingFlags.Instance).GetValue(gameValue);
+                jsonObj.Add(new JProperty("value", SerialiseCivicValue(wrappedValue)));
+            }
+            else
+            {
+                jsonObj.Add(new JProperty("type", gameValue.GetType().Name));
+                jsonObj.Add(new JProperty("properties", SerialiseCivicObject(gameValue)));
+            }
+            return jsonObj;
+        }
+
+        private JObject SerialiseGameValueContext(IGameValueContext gameValueContext)
+        {
+            var jsonObj = new JObject();
+            jsonObj.Add(new JProperty("type", "GameValueContext"));
+            jsonObj.Add(new JProperty("contextName", gameValueContext.ContextName));
             return jsonObj;
         }
 

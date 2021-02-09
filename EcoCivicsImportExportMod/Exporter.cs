@@ -10,7 +10,8 @@ namespace Eco.Mods.CivicsImpExp
     {
         public static void Export<T>(T civicObject, string filename) where T : IHasID
         {
-            File.WriteAllText(filename, JsonConvert.SerializeObject(civicObject, new CivicsJsonConverter()));
+            string json = JsonConvert.SerializeObject(civicObject, Formatting.Indented, new CivicsJsonConverter());
+            File.WriteAllText(filename, json);
         }
     }
 }
