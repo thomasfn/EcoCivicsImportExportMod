@@ -11,6 +11,7 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Players;
     using Gameplay.Systems.Chat;
     using Gameplay.Civics;
+    using Gameplay.Civics.Demographics;
 
     using Shared.Localization;
     using Shared.Utils;
@@ -27,8 +28,17 @@ namespace Eco.Mods.CivicsImpExp
             Logger.Info("Initialized and ready to go");
 
             var electionProcessRegistrar = Registrars.Get<ElectionProcess>();
-            var electionProcess = electionProcessRegistrar.GetById(1) as ElectionProcess;
-            Exporter.Export(electionProcess, Path.Combine("civics", $"election-process-{1}.json"));
+            foreach (var electionProcess in electionProcessRegistrar.All<ElectionProcess>())
+            {
+                Exporter.Export(electionProcess, Path.Combine("civics", $"election-process-{electionProcess.Id}.json"));
+            }
+
+            var demographicRegistrar = Registrars.Get<Demographic>();
+            foreach (var demographic in demographicRegistrar.All<Demographic>())
+            {
+                Exporter.Export(demographic, Path.Combine("civics", $"demographic-{demographic.Id}.json"));
+            }
+
         }
 
         [ChatCommand("Performs an export of a particular civic object.")]

@@ -1,16 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Reflection;
+
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Eco.Mods.CivicsImpExp
 {
+    using Core.Systems;
+    using Core.Utils;
+
     using Shared.Networking;
+    using Shared.Localization;
 
     using Gameplay.Civics.Misc;
+    using Gameplay.Civics.GameValues;
     using Gameplay.Aliases;
+    
 
     public class CivicsJsonConverter : JsonConverter
     {
@@ -28,17 +35,16 @@ namespace Eco.Mods.CivicsImpExp
         {
             var rootObj = new JObject();
 
-            rootObj.Add(new JProperty("majVer", 1));
-            rootObj.Add(new JProperty("minVer", 0));
-            rootObj.Add(new JProperty("civicType", value.GetType().Name));
+            rootObj.Add(new JProperty("version", new int[] { MajorVersion, MinorVersion }));
+            rootObj.Add(new JProperty("type", value.GetType().Name));
 
             if (value is SimpleProposable simpleProposable)
             {
-                rootObj.Add(new JProperty("civicName", SerialiseCivicValue(simpleProposable.Name)));
+                rootObj.Add(new JProperty("name", SerialiseCivicValue(simpleProposable.Name)));
                 rootObj.Add(new JProperty("description", SerialiseCivicValue(simpleProposable.Description())));
             }
 
-            rootObj.Add(new JProperty("civicData", SerialiseCivicObject(value)));
+            rootObj.Add(new JProperty("properties", SerialiseCivicObject(value)));
 
             rootObj.WriteTo(writer);
         }
@@ -62,7 +68,11 @@ namespace Eco.Mods.CivicsImpExp
 
         private object SerialiseCivicValue(object value)
         {
-            if (value is int intValue)
+            if (value == null)
+            {
+                return null;
+            }
+            else if (value is int intValue)
             {
                 return intValue;
             }
@@ -82,18 +92,52 @@ namespace Eco.Mods.CivicsImpExp
             {
                 return stringValue;
             }
-            else if (value is IAlias aliasValue)
+            else if (value is LocString locStringValue)
             {
-                return SerialiseAlias(aliasValue);
+                return locStringValue.ToString();
             }
-            return null;
+            else if (value is INamed namedValue)
+            {
+                return SerialiseObjectReference(namedValue);
+            }
+            else if (value is IEnumerable enumerableValue)
+            {
+                return SerialiseList(enumerableValue);
+            }
+            else if (value is GameValue gameValue)
+            {
+                return SerialiseGameValue(gameValue);
+            }
+            var jsonObj = new JObject();
+            jsonObj.Add(new JProperty("type", "unknown"));
+            jsonObj.Add(new JProperty("actualType", value.GetType().Name));
+            jsonObj.Add(new JProperty("info", value.ToString()));
+            return jsonObj;
         }
 
-        private object SerialiseAlias(IAlias alias)
+        private object SerialiseObjectReference(INamed value)
         {
-            var aliasObj = new JObject();
-            aliasObj.Add(new JProperty("type", alias.GetType().Name));
-            return aliasObj;
+            var jsonObj = new JObject();
+            jsonObj.Add(new JProperty("type", value.GetType().Name));
+            jsonObj.Add(new JProperty("name", value.Name));
+            return jsonObj;
+        }
+
+        private object SerialiseList(IEnumerable enumerableValue)
+        {
+            var jsonArr = new JArray();
+            foreach (object value in enumerableValue)
+            {
+                jsonArr.Add(SerialiseCivicValue(value));
+            }
+            return jsonArr;
+        }
+
+        private object SerialiseGameValue(GameValue gameValue)
+        {
+            var jsonObj = SerialiseCivicObject(gameValue);
+            jsonObj.AddFirst(new JProperty("type", gameValue.GetType().Name));
+            return jsonObj;
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
