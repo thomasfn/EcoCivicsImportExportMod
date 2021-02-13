@@ -9,15 +9,14 @@ using Newtonsoft.Json.Linq;
 namespace Eco.Mods.CivicsImpExp
 {
     using Core.Systems;
-    using Core.Utils;
 
     using Shared.Networking;
     using Shared.Localization;
 
+    using Gameplay.Civics;
     using Gameplay.Civics.Misc;
     using Gameplay.Civics.GameValues;
-    using Gameplay.Aliases;
-    
+    using Gameplay.Civics.Laws;
 
     public class CivicsJsonConverter : JsonConverter
     {
@@ -27,21 +26,23 @@ namespace Eco.Mods.CivicsImpExp
         public const int MajorVersion = 1;
 
         /// <summary>
-        /// Serialised civics authored with a higher minor version are compatible with readers that support a lower minor version.
+        /// Serialised civics authored with a different minor version are compatible.
         /// </summary>
         public const int MinorVersion = 0;
+
+        #region Serialisation
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var rootObj = new JObject();
 
             rootObj.Add(new JProperty("version", new int[] { MajorVersion, MinorVersion }));
-            rootObj.Add(new JProperty("type", value.GetType().Name));
+            rootObj.Add(new JProperty("type", value.GetType().FullName));
 
             if (value is SimpleProposable simpleProposable)
             {
                 rootObj.Add(new JProperty("name", SerialiseCivicValue(simpleProposable.Name)));
-                rootObj.Add(new JProperty("description", SerialiseCivicValue(simpleProposable.Description())));
+                rootObj.Add(new JProperty("description", SerialiseCivicValue(simpleProposable.UserDescription)));
             }
 
             rootObj.Add(new JProperty("properties", SerialiseCivicObject(value)));
@@ -96,6 +97,17 @@ namespace Eco.Mods.CivicsImpExp
             {
                 return locStringValue.ToString();
             }
+            else if (value is Type typeValue)
+            {
+                var jsonObj = new JObject();
+                jsonObj.Add(new JProperty("type", "Type"));
+                jsonObj.Add(new JProperty("value", typeValue.FullName));
+                return jsonObj;
+            }
+            else if (value is GamePickerList gamePickerListValue)
+            {
+                return SerialiseGamePickerList(gamePickerListValue);
+            }
             else if (value is INamed namedValue)
             {
                 return SerialiseObjectReference(namedValue);
@@ -116,17 +128,27 @@ namespace Eco.Mods.CivicsImpExp
             {
                 return value.GetType().GetEnumName(value);
             }
-            var jsonObj = new JObject();
-            jsonObj.Add(new JProperty("type", "unknown"));
-            jsonObj.Add(new JProperty("actualType", value.GetType().Name));
-            jsonObj.Add(new JProperty("info", value.ToString()));
-            return jsonObj;
+            else if (value.GetType().IsClass)
+            {
+                var jsonObj = new JObject();
+                jsonObj.Add(new JProperty("type", value.GetType().FullName));
+                jsonObj.Add(new JProperty("properties", SerialiseCivicObject(value)));
+                return jsonObj;
+            }
+            else
+            {
+                var jsonObj = new JObject();
+                jsonObj.Add(new JProperty("type", "unknown"));
+                jsonObj.Add(new JProperty("actualType", value.GetType().Name));
+                jsonObj.Add(new JProperty("info", value.ToString()));
+                return jsonObj;
+            }
         }
 
         private JObject SerialiseObjectReference(INamed value)
         {
             var jsonObj = new JObject();
-            jsonObj.Add(new JProperty("type", value.GetType().Name));
+            jsonObj.Add(new JProperty("type", value.GetType().FullName));
             jsonObj.Add(new JProperty("name", value.Name));
             return jsonObj;
         }
@@ -139,6 +161,14 @@ namespace Eco.Mods.CivicsImpExp
                 jsonArr.Add(SerialiseCivicValue(value));
             }
             return jsonArr;
+        }
+
+        private JObject SerialiseGamePickerList(GamePickerList gamePickerListValue)
+        {
+            var jsonObj = new JObject();
+            jsonObj.Add(new JProperty("type", "GamePickerList"));
+            jsonObj.Add(new JProperty("entries", SerialiseList(gamePickerListValue.Entries)));
+            return jsonObj;
         }
 
         private JObject SerialiseGameValue(GameValue gameValue)
@@ -166,15 +196,51 @@ namespace Eco.Mods.CivicsImpExp
             return jsonObj;
         }
 
+        #endregion
+
+        #region Deserialisation
+
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            throw new NotImplementedException("Unnecessary because CanRead is false. The type will skip the converter.");
+            var rootObj = JToken.ReadFrom(reader).ToObject<JObject>();
+            if (rootObj == null)
+            {
+                throw new InvalidOperationException("Expected json object");
+            }
+            if (existingValue == null)
+            {
+                existingValue = Activator.CreateInstance(objectType);
+            }
+            var versionArr = rootObj.Value<JArray>("version");
+            int verMaj = versionArr.Value<int>(0);
+            //int verMin = versionArr.Value<int>(1);
+            if (verMaj != MajorVersion)
+            {
+                throw new InvalidOperationException($"Civic format not supported (found major '${verMaj}', expecting '${MajorVersion}'");
+            }
+            string importType = rootObj.Value<string>("type");
+            if (importType != objectType.FullName)
+            {
+                throw new InvalidOperationException($"Civic type mismatch (found major '${importType}', expecting '${objectType.FullName}'");
+            }
+            if (existingValue is SimpleProposable simpleProposable)
+            {
+                simpleProposable.Name = rootObj.Value<string>("name");
+                simpleProposable.UserDescription = rootObj.Value<string>("description");
+            }
+            DeserialiseCivicObject(existingValue, rootObj.Value<JObject>("properties"));
+            Logger.Debug((existingValue as SimpleProposable).Description());
+            return existingValue;
         }
 
-        public override bool CanRead
+        private void DeserialiseCivicObject(object target, JObject obj)
         {
-            get { return false; }
+
         }
+
+        #endregion
+
+        public override bool CanRead => true;
 
         public override bool CanConvert(Type objectType) => true;
     }

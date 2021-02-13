@@ -12,6 +12,9 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Systems.Chat;
     using Gameplay.Civics;
     using Gameplay.Civics.Demographics;
+    using Gameplay.Civics.Titles;
+    using Gameplay.Civics.Constitutional;
+    using Gameplay.Civics.Laws;
 
     using Shared.Localization;
     using Shared.Utils;
@@ -26,46 +29,63 @@ namespace Eco.Mods.CivicsImpExp
         public void Initialize(TimedTask timer)
         {
             Logger.Info("Initialized and ready to go");
-
-            var electionProcessRegistrar = Registrars.Get<ElectionProcess>();
-            foreach (var electionProcess in electionProcessRegistrar.All<ElectionProcess>())
-            {
-                Exporter.Export(electionProcess, Path.Combine("civics", $"election-process-{electionProcess.Id}.json"));
-            }
-
-            var demographicRegistrar = Registrars.Get<Demographic>();
-            foreach (var demographic in demographicRegistrar.All<Demographic>())
-            {
-                Exporter.Export(demographic, Path.Combine("civics", $"demographic-{demographic.Id}.json"));
-            }
-
         }
+
+        #region Exporting
 
         [ChatCommand("Performs an export of a particular civic object.")]
         public static void ExportCivic(User user) { }
 
-        [ChatSubCommand("ExportCivic", "Performs an export of a particular election process.", ChatAuthorizationLevel.Admin)]
-        public static void ExportCivicElectionProcess(User user, int id)
+        [ChatSubCommand("ExportCivic", "Performs an export of a particular law.", ChatAuthorizationLevel.Admin)]
+        public static void ExportCivicLaw(User user, int id)
         {
-            var electionProcessRegistrar = Registrars.Get<ElectionProcess>();
-            var electionProcess = electionProcessRegistrar.GetById(id) as ElectionProcess;
-            if (electionProcess == null)
+            var lawRegistrar = Registrars.Get<Law>();
+            var law = lawRegistrar.GetById(id) as Law;
+            if (law == null)
             {
-                user.Player.Msg(new LocString($"Failed to export election process: none found by id {id}"));
+                user.Player.Msg(new LocString($"Failed to export law: none found by id {id}"));
                 return;
             }
-            string outPath = Path.Combine("civics", $"election-process-{id}.json");
+            string outPath = Path.Combine("civics", $"law-{id}.json");
             try
             {
-                Exporter.Export(electionProcess, outPath);
+                Exporter.Export(law, outPath);
             }
             catch (Exception ex)
             {
-                user.Player.Msg(new LocString($"Failed to export election process: ${ex.Message}"));
+                user.Player.Msg(new LocString($"Failed to export law: ${ex.Message}"));
                 Logger.Error(ex.ToString());
                 return;
             }
-            user.Player.Msg(new LocString($"Exported election process {id} to '{outPath}'"));
+            user.Player.Msg(new LocString($"Exported law {id} to '{outPath}'"));
         }
+
+        #endregion
+
+        #region Importing
+
+        [ChatCommand("Performs an import of a particular civic object.")]
+        public static void ImportCivic(User user) { }
+
+        [ChatSubCommand("ImportCivic", "Performs an import of a particular law.", ChatAuthorizationLevel.Admin)]
+        public static void ImportCivicLaw(User user, string filename)
+        {
+            string inPath = Path.Combine("civics", filename);
+            Law law;
+            try
+            {
+                law = Importer.Import<Law>(inPath);
+                law.Creator = user;
+            }
+            catch (Exception ex)
+            {
+                user.Player.Msg(new LocString($"Failed to import law: ${ex.Message}"));
+                Logger.Error(ex.ToString());
+                return;
+            }
+            user.Player.Msg(new LocString($"Imported law {law.Id} from '{inPath}'"));
+        }
+
+        #endregion
     }
 }
