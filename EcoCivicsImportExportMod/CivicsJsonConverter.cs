@@ -182,7 +182,7 @@ namespace Eco.Mods.CivicsImpExp
             }
             else
             {
-                jsonObj.Add(new JProperty("type", gameValue.GetType().Name));
+                jsonObj.Add(new JProperty("type", gameValue.GetType().FullName));
                 jsonObj.Add(new JProperty("properties", SerialiseCivicObject(gameValue)));
             }
             return jsonObj;
@@ -202,45 +202,12 @@ namespace Eco.Mods.CivicsImpExp
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            var rootObj = JToken.ReadFrom(reader).ToObject<JObject>();
-            if (rootObj == null)
-            {
-                throw new InvalidOperationException("Expected json object");
-            }
-            if (existingValue == null)
-            {
-                existingValue = Activator.CreateInstance(objectType);
-            }
-            var versionArr = rootObj.Value<JArray>("version");
-            int verMaj = versionArr.Value<int>(0);
-            //int verMin = versionArr.Value<int>(1);
-            if (verMaj != MajorVersion)
-            {
-                throw new InvalidOperationException($"Civic format not supported (found major '${verMaj}', expecting '${MajorVersion}'");
-            }
-            string importType = rootObj.Value<string>("type");
-            if (importType != objectType.FullName)
-            {
-                throw new InvalidOperationException($"Civic type mismatch (found major '${importType}', expecting '${objectType.FullName}'");
-            }
-            if (existingValue is SimpleProposable simpleProposable)
-            {
-                simpleProposable.Name = rootObj.Value<string>("name");
-                simpleProposable.UserDescription = rootObj.Value<string>("description");
-            }
-            DeserialiseCivicObject(existingValue, rootObj.Value<JObject>("properties"));
-            Logger.Debug((existingValue as SimpleProposable).Description());
-            return existingValue;
-        }
-
-        private void DeserialiseCivicObject(object target, JObject obj)
-        {
-
+            throw new NotImplementedException();
         }
 
         #endregion
 
-        public override bool CanRead => true;
+        public override bool CanRead => false;
 
         public override bool CanConvert(Type objectType) => true;
     }

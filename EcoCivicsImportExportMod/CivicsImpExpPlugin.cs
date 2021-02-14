@@ -10,14 +10,10 @@ namespace Eco.Mods.CivicsImpExp
 
     using Gameplay.Players;
     using Gameplay.Systems.Chat;
-    using Gameplay.Civics;
-    using Gameplay.Civics.Demographics;
-    using Gameplay.Civics.Titles;
-    using Gameplay.Civics.Constitutional;
     using Gameplay.Civics.Laws;
+    using Gameplay.Objects;
 
     using Shared.Localization;
-    using Shared.Utils;
 
     public class CivicsImpExpPlugin : IModKitPlugin, IInitializablePlugin, IChatCommandHandler
     {
@@ -33,11 +29,8 @@ namespace Eco.Mods.CivicsImpExp
 
         #region Exporting
 
-        [ChatCommand("Performs an export of a particular civic object.")]
-        public static void ExportCivic(User user) { }
-
-        [ChatSubCommand("ExportCivic", "Performs an export of a particular law.", ChatAuthorizationLevel.Admin)]
-        public static void ExportCivicLaw(User user, int id)
+        [ChatSubCommand("Civics", "Performs an export of a particular law.", ChatAuthorizationLevel.Admin)]
+        public static void ExportLaw(User user, int id)
         {
             var lawRegistrar = Registrars.Get<Law>();
             var law = lawRegistrar.GetById(id) as Law;
@@ -53,7 +46,7 @@ namespace Eco.Mods.CivicsImpExp
             }
             catch (Exception ex)
             {
-                user.Player.Msg(new LocString($"Failed to export law: ${ex.Message}"));
+                user.Player.Msg(new LocString($"Failed to export law: {ex.Message}"));
                 Logger.Error(ex.ToString());
                 return;
             }
@@ -64,11 +57,8 @@ namespace Eco.Mods.CivicsImpExp
 
         #region Importing
 
-        [ChatCommand("Performs an import of a particular civic object.")]
-        public static void ImportCivic(User user) { }
-
-        [ChatSubCommand("ImportCivic", "Performs an import of a particular law.", ChatAuthorizationLevel.Admin)]
-        public static void ImportCivicLaw(User user, string filename)
+        [ChatSubCommand("Civics", "Performs an import of a particular law.", ChatAuthorizationLevel.Admin)]
+        public static void ImportLaw(User user, string filename)
         {
             string inPath = Path.Combine("civics", filename);
             Law law;
@@ -79,8 +69,7 @@ namespace Eco.Mods.CivicsImpExp
             }
             catch (Exception ex)
             {
-                user.Player.Msg(new LocString($"Failed to import law: ${ex.Message}"));
-                Logger.Error(ex.ToString());
+                user.Player.Msg(new LocString($"Failed to import law: {ex.Message}"));
                 return;
             }
             user.Player.Msg(new LocString($"Imported law {law.Id} from '{inPath}'"));
