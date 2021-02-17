@@ -17,6 +17,7 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Civics.Misc;
     using Gameplay.Civics.GameValues;
     using Gameplay.Civics.Laws;
+    using Eco.Gameplay.GameActions;
 
     public class CivicsJsonConverter : JsonConverter
     {
@@ -120,6 +121,10 @@ namespace Eco.Mods.CivicsImpExp
             {
                 return SerialiseGameValueContext(gameValueContext);
             }
+            else if (value is TriggerConfig triggerConfig)
+            {
+                return SerialiseTriggerConfig(triggerConfig);
+            }
             else if (value is GameValue gameValue)
             {
                 return SerialiseGameValue(gameValue);
@@ -163,10 +168,23 @@ namespace Eco.Mods.CivicsImpExp
             return jsonArr;
         }
 
+        private JObject SerialiseTriggerConfig(TriggerConfig triggerConfig)
+        {
+            var jsonObj = new JObject();
+            jsonObj.Add(new JProperty("type", triggerConfig.GetType().FullName));
+            var typeToConfig = triggerConfig.GetType().GetProperty("TypeToConfig", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(triggerConfig) as Type;
+            jsonObj.Add(new JProperty("typeToConfig", SerialiseCivicValue(typeToConfig?.FullName)));
+            jsonObj.Add(new JProperty("propNameBacker", SerialiseCivicValue(triggerConfig.PropNameBacker)));
+            jsonObj.Add(new JProperty("properties", SerialiseCivicObject(triggerConfig)));
+            return jsonObj;
+        }
+
         private JObject SerialiseGamePickerList(GamePickerList gamePickerListValue)
         {
             var jsonObj = new JObject();
             jsonObj.Add(new JProperty("type", "GamePickerList"));
+            jsonObj.Add(new JProperty("mustDeriveType", SerialiseCivicValue(gamePickerListValue.MustDeriveType)));
+            jsonObj.Add(new JProperty("requiredTag", SerialiseCivicValue(gamePickerListValue.RequiredTag)));
             jsonObj.Add(new JProperty("entries", SerialiseList(gamePickerListValue.Entries)));
             return jsonObj;
         }

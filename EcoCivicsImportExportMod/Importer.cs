@@ -172,6 +172,10 @@ namespace Eco.Mods.CivicsImpExp
                     default:
                         {
                             Type type = ResolveType(typeName);
+                            if (typeof(TriggerConfig).IsAssignableFrom(type))
+                            {
+                                return DeserialiseTriggerConfig(obj, type, expectedType);
+                            }
                             string name = obj.Value<string>("name");
                             if (name != null)
                             {
@@ -272,6 +276,16 @@ namespace Eco.Mods.CivicsImpExp
                 throw new InvalidOperationException($"Can't deserialise a GamePickerList into a '{expectedType.FullName}'");
             }
             var gamePickerList = new GamePickerList();
+            JObject mustDeriveType = obj.Value<JObject>("mustDeriveType");
+            if (mustDeriveType != null)
+            {
+                gamePickerList.MustDeriveType = DeserialiseValueAsType(mustDeriveType, typeof(Type)) as Type;
+            }
+            string requiredTag = obj.Value<string>("requiredTag");
+            if (!string.IsNullOrEmpty(requiredTag))
+            {
+                gamePickerList.RequiredTag = requiredTag;
+            }
             var arr = obj.Value<JArray>("entries");
             foreach (JToken entry in arr)
             {
@@ -280,6 +294,29 @@ namespace Eco.Mods.CivicsImpExp
             }
             return gamePickerList;
         }
+
+        private static TriggerConfig DeserialiseTriggerConfig(JObject obj, Type triggerConfigType, Type expectedType)
+        {
+            if (!expectedType.IsAssignableFrom(typeof(TriggerConfig)))
+            {
+                throw new InvalidOperationException($"Can't deserialise a TriggerConfig into a '{expectedType.FullName}'");
+            }
+            if (!typeof(TriggerConfig).IsAssignableFrom(triggerConfigType))
+            {
+                throw new InvalidOperationException($"Can't deserialise a '{triggerConfigType.FullName}' into a TriggerConfig");
+            }
+            var triggerConfig = Activator.CreateInstance(triggerConfigType) as TriggerConfig;
+            typeof(TriggerConfig)
+                .GetProperty("PropNameBacker", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(triggerConfig, obj.Value<string>("propNameBacker"), BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
+            string typeToConfig = obj.Value<string>("typeToConfig");
+            typeof(TriggerConfig)
+                .GetProperty("TypeToConfig", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(triggerConfig, string.IsNullOrEmpty(typeToConfig) ? null : ResolveType(typeToConfig), BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
+            DeserialiseObject(triggerConfig, obj.Value<JObject>("properties"));
+            return triggerConfig;
+        }
+
 
         #endregion
     }
