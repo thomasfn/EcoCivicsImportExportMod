@@ -1,19 +1,24 @@
 ﻿using System;
 using System.Linq;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Eco.Mods.CivicsImpExp
 {
     using Core.Plugins.Interfaces;
     using Core.Utils;
     using Core.Systems;
+    using Core.IoC;
+
+    using Shared.Localization;
 
     using Gameplay.Players;
     using Gameplay.Systems.Chat;
+    using Gameplay.Systems.TextLinks;
     using Gameplay.Civics.Laws;
+    using Gameplay.Civics.Misc;
     using Gameplay.Objects;
-
-    using Shared.Localization;
+    using Gameplay.Components;
 
     public class CivicsImpExpPlugin : IModKitPlugin, IInitializablePlugin, IChatCommandHandler
     {
@@ -57,9 +62,26 @@ namespace Eco.Mods.CivicsImpExp
 
         #region Importing
 
+        private static WorldObject FindFreeWorldObjectForCivic<TCivic>() where TCivic : SimpleProposable
+        {
+            var worldObjectManager = ServiceHolder<IWorldObjectManager>.Obj;
+            var relevantWorldObjects = worldObjectManager.All
+                .Where((worldObject) => worldObject.HasComponent<CivicObjectComponent>())
+                .Select((worldObject) => (worldObject, worldObject.GetComponent<CivicObjectComponent>()))
+                .Where((worldObjectAndComp) => worldObjectAndComp.Item2.ObjectType.IsAssignableFrom(typeof(TCivic)))
+                .Where((worldObjectAndComp) => worldObjectAndComp.Item2.UsedSlots < worldObjectAndComp.Item2.MaxCount);
+            return relevantWorldObjects.FirstOrDefault().worldObject;
+        }
+
         [ChatSubCommand("Civics", "Performs an import of a particular law.", ChatAuthorizationLevel.Admin)]
         public static void ImportLaw(User user, string filename)
         {
+            var worldObject = FindFreeWorldObjectForCivic<Law>();
+            if (worldObject == null)
+            {
+                user.Player.Msg(new LocString($"Failed to import law: no world objects found with available space for the civic"));
+                return;
+            }
             string inPath = Path.Combine("civics", filename);
             Law law;
             try
@@ -72,7 +94,8 @@ namespace Eco.Mods.CivicsImpExp
                 user.Player.Msg(new LocString($"Failed to import law: {ex.Message}"));
                 return;
             }
-            user.Player.Msg(new LocString($"Imported law {law.Id} from '{inPath}'"));
+            law.SetHostObject(worldObject);
+            user.Player.Msg(new LocString($"Imported law {law.UILink()} from '{inPath}' onto {worldObject.UILink()}"));
         }
 
         #endregion

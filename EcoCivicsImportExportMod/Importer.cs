@@ -86,7 +86,6 @@ namespace Eco.Mods.CivicsImpExp
                 simpleProposable.UserDescription = rootObj.Value<string>("description");
             }
             DeserialiseObject(target, rootObj.Value<JObject>("properties"));
-            Logger.Debug((target as SimpleProposable).Description());
         }
 
         private static void DeserialiseObject(object target, JObject obj)
