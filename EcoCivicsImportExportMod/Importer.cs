@@ -313,6 +313,10 @@ namespace Eco.Mods.CivicsImpExp
             typeof(TriggerConfig)
                 .GetProperty("TypeToConfig", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(triggerConfig, string.IsNullOrEmpty(typeToConfig) ? null : ResolveType(typeToConfig), BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
+            string propDisplayName = obj.Value<string>("propDisplayName");
+            typeof(TriggerConfig)
+                .GetProperty("PropDisplayName", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(triggerConfig, propDisplayName, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
             DeserialiseObject(triggerConfig, obj.Value<JObject>("properties"));
             return triggerConfig;
         }

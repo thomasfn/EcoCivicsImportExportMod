@@ -175,6 +175,8 @@ namespace Eco.Mods.CivicsImpExp
             var typeToConfig = triggerConfig.GetType().GetProperty("TypeToConfig", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(triggerConfig) as Type;
             jsonObj.Add(new JProperty("typeToConfig", SerialiseCivicValue(typeToConfig?.FullName)));
             jsonObj.Add(new JProperty("propNameBacker", SerialiseCivicValue(triggerConfig.PropNameBacker)));
+            var propDisplayName = typeof(TriggerConfig).GetProperty("PropDisplayName", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(triggerConfig) as string;
+            jsonObj.Add(new JProperty("propDisplayName", SerialiseCivicValue(propDisplayName)));
             jsonObj.Add(new JProperty("properties", SerialiseCivicObject(triggerConfig)));
             return jsonObj;
         }
