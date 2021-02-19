@@ -95,6 +95,7 @@ namespace Eco.Mods.CivicsImpExp
                 return;
             }
             law.SetHostObject(worldObject);
+            law.MarkDirty();
             user.Player.Msg(new LocString($"Imported law {law.UILink()} from '{inPath}' onto {worldObject.UILink()}"));
         }
 

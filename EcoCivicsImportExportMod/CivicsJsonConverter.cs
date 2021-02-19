@@ -212,7 +212,11 @@ namespace Eco.Mods.CivicsImpExp
         {
             var jsonObj = new JObject();
             jsonObj.Add(new JProperty("type", "GameValueContext"));
-            jsonObj.Add(new JProperty("contextName", gameValueContext.ContextName));
+            jsonObj.Add(new JProperty("contextName", SerialiseCivicValue(gameValueContext.ContextName)));
+            string titleBacking = gameValueContext.GetType().GetProperty("TitleBacking", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(gameValueContext, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null) as string;
+            jsonObj.Add(new JProperty("titleBacking", SerialiseCivicValue(titleBacking)));
+            string tooltip = gameValueContext.GetType().GetProperty("Tooltip", BindingFlags.Public | BindingFlags.Instance).GetValue(gameValueContext, BindingFlags.Public | BindingFlags.Instance, null, null, null) as string;
+            jsonObj.Add(new JProperty("tooltip", SerialiseCivicValue(tooltip)));
             return jsonObj;
         }
 

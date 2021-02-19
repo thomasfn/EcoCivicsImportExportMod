@@ -13,6 +13,7 @@ namespace Eco.Mods.CivicsImpExp
 {
     using Core.Utils;
     using Core.Systems;
+    using Core.Controller;
 
     using Shared.Items;
     using Shared.Localization;
@@ -244,10 +245,14 @@ namespace Eco.Mods.CivicsImpExp
             {
                 throw new InvalidOperationException($"Can't deserialise a '{gameValueContextType.FullName}' into a '{expectedType.FullName}'");
             }
+            var gameValueContext = Activator.CreateInstance(gameValueContextType) as IGameValueContext;
             string contextName = obj.Value<string>("contextName");
-            var gameValueContext = Activator.CreateInstance(gameValueContextType);
-            Logger.Debug($"Created a GameValueContext for context name '{contextName}' but this part isn't implemented yet!");
-            //gameValueContextType.GetMethod("SetContextChoice")
+            gameValueContextType.GetProperty("ContextName", BindingFlags.Public | BindingFlags.Instance).SetValue(gameValueContext, contextName, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
+            string titleBacking = obj.Value<string>("titleBacking");
+            gameValueContextType.GetProperty("TitleBacking", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(gameValueContext, titleBacking, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
+            string tooltip = obj.Value<string>("tooltip");
+            gameValueContextType.GetProperty("Tooltip", BindingFlags.Public | BindingFlags.Instance).SetValue(gameValueContext, tooltip, BindingFlags.Public | BindingFlags.Instance, null, null, null);
+            (gameValueContext as IController).Changed("Title");
             return gameValueContext;
         }
 
