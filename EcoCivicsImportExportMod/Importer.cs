@@ -32,14 +32,18 @@ namespace Eco.Mods.CivicsImpExp
             string json = File.ReadAllText(filename);
             JObject jsonObj = JObject.Parse(json);
             var obj = Registrars.Add<T>(null, null);
-            if (obj is SimpleProposable simpleProposable)
+            if (obj is IProposable proposable)
             {
-                simpleProposable.InitializeDraftProposable();
-                simpleProposable.SetProposedState(ProposableState.Draft, true, true);
+                proposable.InitializeDraftProposable();
             }
             try
             {
                 Deserialise(obj, jsonObj);
+                if (obj is SimpleProposable simpleProposable)
+                {
+                    simpleProposable.SetProposedState(ProposableState.Draft, true, true);
+                }
+
             }
             catch (Exception ex)
             {
