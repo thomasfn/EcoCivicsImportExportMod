@@ -38,7 +38,8 @@ namespace Eco.Mods.CivicsImpExp
             {
                 throw new InvalidOperationException($"Invalid type '{typeName}'");
             }
-            var obj = registrar.Add() as IHasID;
+            var obj = Activator.CreateInstance(type) as IHasID;
+            registrar.Insert(obj);
             try
             {
                 if (obj is IProposable proposable)
