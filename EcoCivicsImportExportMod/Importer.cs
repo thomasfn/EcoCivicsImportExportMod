@@ -27,17 +27,24 @@ namespace Eco.Mods.CivicsImpExp
         private static readonly Regex matchNumberAtEnd = new Regex(@"[0-9]+$", RegexOptions.Compiled);
         private static readonly Regex matchAssemblyFromType = new Regex(@"^[a-zA-Z]+\.[a-zA-Z]+", RegexOptions.Compiled);
 
-        public static T Import<T>(string filename) where T : IHasID
+        public static IHasID Import(string filename)
         {
             string json = File.ReadAllText(filename);
             JObject jsonObj = JObject.Parse(json);
-            var obj = Registrars.Add<T>(null, null);
-            if (obj is IProposable proposable)
+            string typeName = jsonObj.Value<string>("type");
+            Type type = Type.GetType($"{typeName}, Eco.Gameplay", true);
+            var registrar = Registrars.Get(type);
+            if (registrar == null)
             {
-                proposable.InitializeDraftProposable();
+                throw new InvalidOperationException($"Invalid type '{typeName}'");
             }
+            var obj = registrar.Add() as IHasID;
             try
             {
+                if (obj is IProposable proposable)
+                {
+                    proposable.InitializeDraftProposable();
+                }
                 Deserialise(obj, jsonObj);
                 if (obj is SimpleProposable simpleProposable)
                 {
@@ -48,7 +55,6 @@ namespace Eco.Mods.CivicsImpExp
             catch (Exception ex)
             {
                 Registrars.Remove(obj);
-                Logger.Error(ex.ToString());
                 throw ex;
             }
             return obj;
