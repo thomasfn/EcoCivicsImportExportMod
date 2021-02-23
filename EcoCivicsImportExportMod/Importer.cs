@@ -200,7 +200,7 @@ namespace Eco.Mods.CivicsImpExp
                         }
                 }
             }
-            else if (token.Type == JTokenType.Null && expectedType.IsClass)
+            else if (token.Type == JTokenType.Null && (expectedType.IsClass || expectedType.IsInterface))
             {
                 return null;
             }
