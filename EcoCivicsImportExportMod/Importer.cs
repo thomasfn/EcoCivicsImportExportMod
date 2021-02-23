@@ -44,11 +44,12 @@ namespace Eco.Mods.CivicsImpExp
                 if (obj is IProposable proposable)
                 {
                     proposable.InitializeDraftProposable();
+                    Deserialise(obj, jsonObj);
+                    proposable.SetProposedState(ProposableState.Draft, true, true);
                 }
-                Deserialise(obj, jsonObj);
-                if (obj is SimpleProposable simpleProposable)
+                else
                 {
-                    simpleProposable.SetProposedState(ProposableState.Draft, true, true);
+                    Deserialise(obj, jsonObj);
                 }
 
             }
