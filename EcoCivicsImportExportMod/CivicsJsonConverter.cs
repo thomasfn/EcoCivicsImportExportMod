@@ -17,7 +17,8 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Civics.Misc;
     using Gameplay.Civics.GameValues;
     using Gameplay.Civics.Laws;
-    using Eco.Gameplay.GameActions;
+    using Gameplay.GameActions;
+    using Gameplay.Utils;
 
     public class CivicsJsonConverter : JsonConverter
     {
@@ -40,10 +41,10 @@ namespace Eco.Mods.CivicsImpExp
             rootObj.Add(new JProperty("version", new int[] { MajorVersion, MinorVersion }));
             rootObj.Add(new JProperty("type", value.GetType().FullName));
 
-            if (value is SimpleProposable simpleProposable)
+            if (value is SimpleEntry simpleEntry)
             {
-                rootObj.Add(new JProperty("name", SerialiseCivicValue(simpleProposable.Name)));
-                rootObj.Add(new JProperty("description", SerialiseCivicValue(simpleProposable.UserDescription)));
+                rootObj.Add(new JProperty("name", SerialiseCivicValue(simpleEntry.Name)));
+                rootObj.Add(new JProperty("description", SerialiseCivicValue(simpleEntry.UserDescription)));
             }
 
             rootObj.Add(new JProperty("properties", SerialiseCivicObject(value)));

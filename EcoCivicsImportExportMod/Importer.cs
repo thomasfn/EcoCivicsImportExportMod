@@ -21,6 +21,7 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Civics.GameValues;
     using Gameplay.GameActions;
     using Gameplay.Civics.Misc;
+    using Gameplay.Utils;
 
     public static class Importer
     {
@@ -78,7 +79,7 @@ namespace Eco.Mods.CivicsImpExp
             {
                 throw new InvalidOperationException($"Civic type mismatch (found '{importType}', expecting '{target.GetType().FullName}'");
             }
-            if (target is SimpleProposable simpleProposable)
+            if (target is SimpleEntry simpleEntry)
             {
                 var registrar = Registrars.TypeToRegistrar[target.GetType()];
                 string name = rootObj.Value<string>("name");
@@ -95,8 +96,8 @@ namespace Eco.Mods.CivicsImpExp
                         name = $"{name} 2";
                     }
                 }
-                simpleProposable.Name = name;
-                simpleProposable.UserDescription = rootObj.Value<string>("description");
+                simpleEntry.Name = name;
+                simpleEntry.UserDescription = rootObj.Value<string>("description");
             }
             DeserialiseObject(target, rootObj.Value<JObject>("properties"));
         }
