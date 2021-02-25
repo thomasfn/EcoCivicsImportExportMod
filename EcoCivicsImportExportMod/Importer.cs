@@ -99,10 +99,10 @@ namespace Eco.Mods.CivicsImpExp
                 simpleEntry.Name = name;
                 simpleEntry.UserDescription = rootObj.Value<string>("description");
             }
-            DeserialiseObject(target, rootObj.Value<JObject>("properties"));
+            DeserialiseObjectProperties(target, rootObj.Value<JObject>("properties"));
         }
 
-        private static void DeserialiseObject(object target, JObject obj)
+        private static void DeserialiseObjectProperties(object target, JObject obj)
         {
             foreach (var pair in obj)
             {
@@ -114,13 +114,6 @@ namespace Eco.Mods.CivicsImpExp
                 }
                 DeserialiseValue(target, targetProperty, pair.Value);
             }
-        }
-
-        private static object DeserialiseObject(Type type, JObject obj)
-        {
-            object target = Activator.CreateInstance(type);
-            DeserialiseObject(target, obj);
-            return target;
         }
 
         private static void DeserialiseValue(object target, PropertyInfo propertyInfo, JToken value)
@@ -183,24 +176,7 @@ namespace Eco.Mods.CivicsImpExp
                     case "GameValueContext": return DeserialiseGameValueContext(obj, expectedType);
                     case "GameValueWrapper": return DeserialiseGameValueWrapper(obj, expectedType);
                     case "GamePickerList": return DeserialiseGamePickerList(obj, expectedType);
-                    default:
-                        {
-                            Type type = ResolveType(typeName);
-                            if (typeof(TriggerConfig).IsAssignableFrom(type))
-                            {
-                                return DeserialiseTriggerConfig(obj, type, expectedType);
-                            }
-                            string name = obj.Value<string>("name");
-                            if (name != null)
-                            {
-                                return ResolveReference(type, name);
-                            }
-                            if (!expectedType.IsAssignableFrom(type))
-                            {
-                                throw new InvalidOperationException($"Can't deserialise a '{typeName}' into a '{expectedType.FullName}'");
-                            }
-                            return DeserialiseObject(type, obj.Value<JObject>("properties"));
-                        }
+                    default: return DeserialiseGenericObject(obj, expectedType);
                 }
             }
             else if (token.Type == JTokenType.Null && (expectedType.IsClass || expectedType.IsInterface))
@@ -233,6 +209,49 @@ namespace Eco.Mods.CivicsImpExp
                 throw new InvalidOperationException($"Failed to resolve reference '{name}' (of type '{type.FullName}')");
             }
             return obj;
+        }
+
+        private static object DeserialiseGenericObject(JObject obj, Type expectedType)
+        {
+            string typeName = obj.Value<string>("type");
+            Type type = ResolveType(typeName);
+            if (typeof(TriggerConfig).IsAssignableFrom(type))
+            {
+                return DeserialiseTriggerConfig(obj, type, expectedType);
+            }
+            string name = obj.Value<string>("name");
+            bool isRef = obj.Value<bool>("reference");
+            if (isRef)
+            {
+                if (string.IsNullOrEmpty(name))
+                {
+                    throw new InvalidOperationException($"Can't deserialise a reference to '{typeName}' (missing name)");
+                }
+                return ResolveReference(type, name);
+            }
+            if (!expectedType.IsAssignableFrom(type))
+            {
+                throw new InvalidOperationException($"Can't deserialise a '{typeName}' into a '{expectedType.FullName}'");
+            }
+            object target = Activator.CreateInstance(type);
+            if (target is IHasID hasID)
+            {
+                Registrars.Get(type)?.Insert(hasID);
+            }
+            if (target is INamed named && !string.IsNullOrEmpty(name))
+            {
+                named.Name = name;
+            }
+            if (target is SimpleEntry simpleEntry)
+            {
+                string description = obj.Value<string>("description");
+                if (!string.IsNullOrEmpty(description))
+                {
+                    simpleEntry.UserDescription = description;
+                }
+            }
+            DeserialiseObjectProperties(target, obj.Value<JObject>("properties"));
+            return target;
         }
 
         private static void DeserialiseControllerList(object target, JArray token)
@@ -335,7 +354,7 @@ namespace Eco.Mods.CivicsImpExp
             typeof(TriggerConfig)
                 .GetProperty("PropDisplayName", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(triggerConfig, propDisplayName, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
-            DeserialiseObject(triggerConfig, obj.Value<JObject>("properties"));
+            DeserialiseObjectProperties(triggerConfig, obj.Value<JObject>("properties"));
             return triggerConfig;
         }
 

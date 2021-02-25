@@ -13,10 +13,8 @@ namespace Eco.Mods.CivicsImpExp
     using Shared.Networking;
     using Shared.Localization;
 
-    using Gameplay.Civics;
     using Gameplay.Civics.Misc;
     using Gameplay.Civics.GameValues;
-    using Gameplay.Civics.Laws;
     using Gameplay.GameActions;
     using Gameplay.Utils;
 
@@ -36,40 +34,47 @@ namespace Eco.Mods.CivicsImpExp
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var rootObj = new JObject();
-
-            rootObj.Add(new JProperty("version", new int[] { MajorVersion, MinorVersion }));
-            rootObj.Add(new JProperty("type", value.GetType().FullName));
-
-            if (value is SimpleEntry simpleEntry)
-            {
-                rootObj.Add(new JProperty("name", SerialiseCivicValue(simpleEntry.Name)));
-                rootObj.Add(new JProperty("description", SerialiseCivicValue(simpleEntry.UserDescription)));
-            }
-
-            rootObj.Add(new JProperty("properties", SerialiseCivicObject(value)));
-
+            var rootObj = SerialiseGenericObject(value, value as IHasSubRegistrarEntries);
+            rootObj.AddFirst(new JProperty("version", new int[] { MajorVersion, MinorVersion }));
             rootObj.WriteTo(writer);
         }
 
-        private JObject SerialiseCivicObject(object civicObject)
+        private JObject SerialiseGenericObject(object value, IHasSubRegistrarEntries inlineObjectContext = null)
         {
-            var civicObj = new JObject();
+            var obj = new JObject();
+            obj.Add(new JProperty("type", value.GetType().FullName));
+            if (value is INamed named)
+            {
+                obj.Add(new JProperty("name", SerialiseValue(named.Name)));
+            }
+            obj.Add(new JProperty("reference", false));
+            if (value is SimpleEntry simpleEntry)
+            {
+                obj.Add(new JProperty("description", SerialiseValue(simpleEntry.UserDescription)));
+            }
 
-            var properties = civicObject.GetType()
+            obj.Add(new JProperty("properties", SerialiseObjectProperties(value, value as IHasSubRegistrarEntries)));
+            return obj;
+        }
+
+        private JObject SerialiseObjectProperties(object value, IHasSubRegistrarEntries inlineObjectContext = null)
+        {
+            var obj = new JObject();
+
+            var properties = value.GetType()
                 .GetProperties()
                 .Where((propInfo) => propInfo.GetCustomAttribute<EcoAttribute>() != null);
 
             foreach (var propInfo in properties)
             {
-                var token = SerialiseCivicValue(propInfo.GetValue(civicObject));
-                civicObj.Add(new JProperty(propInfo.Name, token));
+                var token = SerialiseValue(propInfo.GetValue(value), inlineObjectContext);
+                obj.Add(new JProperty(propInfo.Name, token));
             }
 
-            return civicObj;
+            return obj;
         }
 
-        private object SerialiseCivicValue(object value)
+        private object SerialiseValue(object value, IHasSubRegistrarEntries inlineObjectContext = null)
         {
             if (value == null)
             {
@@ -108,15 +113,15 @@ namespace Eco.Mods.CivicsImpExp
             }
             else if (value is GamePickerList gamePickerListValue)
             {
-                return SerialiseGamePickerList(gamePickerListValue);
+                return SerialiseGamePickerList(gamePickerListValue, inlineObjectContext);
             }
-            else if (value is INamed namedValue)
+            else if (value is INamed namedValue && (inlineObjectContext == null || !inlineObjectContext.SubRegistrarEntries.Contains(namedValue)))
             {
                 return SerialiseObjectReference(namedValue);
             }
             else if (value is IEnumerable enumerableValue)
             {
-                return SerialiseList(enumerableValue);
+                return SerialiseList(enumerableValue, inlineObjectContext);
             }
             else if (value is IGameValueContext gameValueContext)
             {
@@ -136,10 +141,7 @@ namespace Eco.Mods.CivicsImpExp
             }
             else if (value.GetType().IsClass)
             {
-                var jsonObj = new JObject();
-                jsonObj.Add(new JProperty("type", value.GetType().FullName));
-                jsonObj.Add(new JProperty("properties", SerialiseCivicObject(value)));
-                return jsonObj;
+                return SerialiseGenericObject(value, inlineObjectContext);
             }
             else
             {
@@ -156,15 +158,16 @@ namespace Eco.Mods.CivicsImpExp
             var jsonObj = new JObject();
             jsonObj.Add(new JProperty("type", value.GetType().FullName));
             jsonObj.Add(new JProperty("name", value.Name));
+            jsonObj.Add(new JProperty("reference", true));
             return jsonObj;
         }
 
-        private JArray SerialiseList(IEnumerable enumerableValue)
+        private JArray SerialiseList(IEnumerable enumerableValue, IHasSubRegistrarEntries inlineObjectContext)
         {
             var jsonArr = new JArray();
             foreach (object value in enumerableValue)
             {
-                jsonArr.Add(SerialiseCivicValue(value));
+                jsonArr.Add(SerialiseValue(value, inlineObjectContext));
             }
             return jsonArr;
         }
@@ -174,21 +177,21 @@ namespace Eco.Mods.CivicsImpExp
             var jsonObj = new JObject();
             jsonObj.Add(new JProperty("type", triggerConfig.GetType().FullName));
             var typeToConfig = triggerConfig.GetType().GetProperty("TypeToConfig", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(triggerConfig) as Type;
-            jsonObj.Add(new JProperty("typeToConfig", SerialiseCivicValue(typeToConfig?.FullName)));
-            jsonObj.Add(new JProperty("propNameBacker", SerialiseCivicValue(triggerConfig.PropNameBacker)));
+            jsonObj.Add(new JProperty("typeToConfig", SerialiseValue(typeToConfig?.FullName)));
+            jsonObj.Add(new JProperty("propNameBacker", SerialiseValue(triggerConfig.PropNameBacker)));
             var propDisplayName = typeof(TriggerConfig).GetProperty("PropDisplayName", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(triggerConfig) as string;
-            jsonObj.Add(new JProperty("propDisplayName", SerialiseCivicValue(propDisplayName)));
-            jsonObj.Add(new JProperty("properties", SerialiseCivicObject(triggerConfig)));
+            jsonObj.Add(new JProperty("propDisplayName", SerialiseValue(propDisplayName)));
+            jsonObj.Add(new JProperty("properties", SerialiseObjectProperties(triggerConfig)));
             return jsonObj;
         }
 
-        private JObject SerialiseGamePickerList(GamePickerList gamePickerListValue)
+        private JObject SerialiseGamePickerList(GamePickerList gamePickerListValue, IHasSubRegistrarEntries inlineObjectContext)
         {
             var jsonObj = new JObject();
             jsonObj.Add(new JProperty("type", "GamePickerList"));
-            jsonObj.Add(new JProperty("mustDeriveType", SerialiseCivicValue(gamePickerListValue.MustDeriveType)));
-            jsonObj.Add(new JProperty("requiredTag", SerialiseCivicValue(gamePickerListValue.RequiredTag)));
-            jsonObj.Add(new JProperty("entries", SerialiseList(gamePickerListValue.Entries)));
+            jsonObj.Add(new JProperty("mustDeriveType", SerialiseValue(gamePickerListValue.MustDeriveType, inlineObjectContext)));
+            jsonObj.Add(new JProperty("requiredTag", SerialiseValue(gamePickerListValue.RequiredTag, inlineObjectContext)));
+            jsonObj.Add(new JProperty("entries", SerialiseList(gamePickerListValue.Entries, inlineObjectContext)));
             return jsonObj;
         }
 
@@ -199,12 +202,12 @@ namespace Eco.Mods.CivicsImpExp
             {
                 jsonObj.Add(new JProperty("type", "GameValueWrapper"));
                 object wrappedValue = gameValue.GetType().GetProperty("Object", BindingFlags.Public | BindingFlags.Instance).GetValue(gameValue);
-                jsonObj.Add(new JProperty("value", SerialiseCivicValue(wrappedValue)));
+                jsonObj.Add(new JProperty("value", SerialiseValue(wrappedValue)));
             }
             else
             {
                 jsonObj.Add(new JProperty("type", gameValue.GetType().FullName));
-                jsonObj.Add(new JProperty("properties", SerialiseCivicObject(gameValue)));
+                jsonObj.Add(new JProperty("properties", SerialiseObjectProperties(gameValue)));
             }
             return jsonObj;
         }
@@ -213,11 +216,11 @@ namespace Eco.Mods.CivicsImpExp
         {
             var jsonObj = new JObject();
             jsonObj.Add(new JProperty("type", "GameValueContext"));
-            jsonObj.Add(new JProperty("contextName", SerialiseCivicValue(gameValueContext.ContextName)));
+            jsonObj.Add(new JProperty("contextName", SerialiseValue(gameValueContext.ContextName)));
             string titleBacking = gameValueContext.GetType().GetProperty("TitleBacking", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(gameValueContext, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null) as string;
-            jsonObj.Add(new JProperty("titleBacking", SerialiseCivicValue(titleBacking)));
+            jsonObj.Add(new JProperty("titleBacking", SerialiseValue(titleBacking)));
             string tooltip = gameValueContext.GetType().GetProperty("Tooltip", BindingFlags.Public | BindingFlags.Instance).GetValue(gameValueContext, BindingFlags.Public | BindingFlags.Instance, null, null, null) as string;
-            jsonObj.Add(new JProperty("tooltip", SerialiseCivicValue(tooltip)));
+            jsonObj.Add(new JProperty("tooltip", SerialiseValue(tooltip)));
             return jsonObj;
         }
 
