@@ -13,6 +13,7 @@ namespace Eco.Mods.CivicsImpExp
     using Shared.Networking;
     using Shared.Localization;
     using Shared.Math;
+    using Shared.Utils;
 
     using Gameplay.LegislationSystem;
     using Gameplay.Civics.Misc;
@@ -111,6 +112,15 @@ namespace Eco.Mods.CivicsImpExp
             {
                 return stringValue;
             }
+            else if (value is Color color)
+            {
+                var jsonArr = new JArray();
+                jsonArr.Add(color.R);
+                jsonArr.Add(color.G);
+                jsonArr.Add(color.B);
+                jsonArr.Add(color.A);
+                return jsonArr;
+            }
             else if (value is LocString locStringValue)
             {
                 return locStringValue.ToString();
@@ -149,6 +159,10 @@ namespace Eco.Mods.CivicsImpExp
             else if (value is DistrictMap districtMap)
             {
                 return SerialiseDistrictMap(districtMap);
+            }
+            else if (value is District district)
+            {
+                return SerialiseDistrict(district);
             }
             else if (value.GetType().IsEnum)
             {
@@ -246,6 +260,13 @@ namespace Eco.Mods.CivicsImpExp
                 dataArr.Add(row);
             }
             jsonObj.Add(new JProperty("data", dataArr));
+            return jsonObj;
+        }
+
+        private JObject SerialiseDistrict(District district)
+        {
+            var jsonObj = SerialiseGenericObject(district);
+            jsonObj.Add(new JProperty("color", SerialiseValue(district.Color)));
             return jsonObj;
         }
 

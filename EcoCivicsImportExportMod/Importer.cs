@@ -14,6 +14,7 @@ namespace Eco.Mods.CivicsImpExp
     using Shared.Items;
     using Shared.Localization;
     using Shared.Math;
+    using Shared.Utils;
 
     using Gameplay.LegislationSystem;
     using Gameplay.Civics.GameValues;
@@ -177,6 +178,15 @@ namespace Eco.Mods.CivicsImpExp
                     default: return DeserialiseGenericObject(obj, expectedType);
                 }
             }
+            else if (token.Type == JTokenType.Array)
+            {
+                JArray arr = token.ToObject<JArray>();
+                if (expectedType == typeof(Color))
+                {
+                    return new Color(arr.Value<float>(0), arr.Value<float>(1), arr.Value<float>(2), arr.Value<float>(3));
+                }
+                throw new InvalidOperationException($"Can't deserialise an array into a '{expectedType.FullName}'");
+            }
             else if (token.Type == JTokenType.Null && (expectedType.IsClass || expectedType.IsInterface))
             {
                 return null;
@@ -300,6 +310,10 @@ namespace Eco.Mods.CivicsImpExp
                 districtMap.Changed(nameof(districtMap.Districts));
                 districtMap.Changed(nameof(districtMap.Map));
                 districtMap.UpdateDistricts();
+            }
+            if (target is District district2)
+            {
+                district2.SetColor((Color)DeserialiseValueAsType(obj.Value<JToken>("color"), typeof(Color)));
             }
             DeserialiseObjectProperties(target, obj.Value<JObject>("properties"));
             if (target is IProposable proposable2)
