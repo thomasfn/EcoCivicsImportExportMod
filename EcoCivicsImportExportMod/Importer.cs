@@ -1,12 +1,8 @@
 ﻿using System;
 using System.IO;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Eco.Mods.CivicsImpExp
@@ -17,10 +13,13 @@ namespace Eco.Mods.CivicsImpExp
 
     using Shared.Items;
     using Shared.Localization;
-    
+    using Shared.Math;
+
+    using Gameplay.LegislationSystem;
     using Gameplay.Civics.GameValues;
-    using Gameplay.GameActions;
     using Gameplay.Civics.Misc;
+    using Gameplay.Civics.Districts;
+    using Gameplay.GameActions;
     using Gameplay.Utils;
 
     public static class Importer
@@ -79,27 +78,26 @@ namespace Eco.Mods.CivicsImpExp
             {
                 throw new InvalidOperationException($"Civic type mismatch (found '{importType}', expecting '{target.GetType().FullName}'");
             }
-            if (target is SimpleEntry simpleEntry)
+            DeserialiseGenericObject(rootObj, target);
+        }
+
+        private static string GetUniqueName(Registrar registrar, string original)
+        {
+            string name = original;
+            while (registrar.GetByName(name) != null)
             {
-                var registrar = Registrars.TypeToRegistrar[target.GetType()];
-                string name = rootObj.Value<string>("name");
-                while (registrar.GetByName(name) != null)
+                var numberAtEndMatch = matchNumberAtEnd.Match(name);
+                if (numberAtEndMatch.Success)
                 {
-                    var numberAtEndMatch = matchNumberAtEnd.Match(name);
-                    if (numberAtEndMatch.Success)
-                    {
-                        int num = int.Parse(numberAtEndMatch.Value);
-                        name = $"{name.Substring(0, name.Length - numberAtEndMatch.Length)}{num + 1}";
-                    }
-                    else
-                    {
-                        name = $"{name} 2";
-                    }
+                    int num = int.Parse(numberAtEndMatch.Value);
+                    name = $"{name.Substring(0, name.Length - numberAtEndMatch.Length)}{num + 1}";
                 }
-                simpleEntry.Name = name;
-                simpleEntry.UserDescription = rootObj.Value<string>("description");
+                else
+                {
+                    name = $"{name} 2";
+                }
             }
-            DeserialiseObjectProperties(target, rootObj.Value<JObject>("properties"));
+            return name;
         }
 
         private static void DeserialiseObjectProperties(object target, JObject obj)
@@ -234,13 +232,34 @@ namespace Eco.Mods.CivicsImpExp
                 throw new InvalidOperationException($"Can't deserialise a '{typeName}' into a '{expectedType.FullName}'");
             }
             object target = Activator.CreateInstance(type);
+            DeserialiseGenericObject(obj, target);
             if (target is IHasID hasID)
             {
-                Registrars.Get(type)?.Insert(hasID);
+                var registrar = Registrars.Get(type);
+                registrar.Insert(hasID);
+            }
+            return target;
+        }
+
+        private static void DeserialiseGenericObject(JObject obj, object target)
+        {
+            string name = obj.Value<string>("name");
+            bool isRef = obj.Value<bool>("reference");
+            if (isRef)
+            {
+                throw new InvalidOperationException($"Can't deserialise a reference into an existing object");
             }
             if (target is INamed named && !string.IsNullOrEmpty(name))
             {
-                named.Name = name;
+                try
+                {
+                    var registrar = Registrars.Get(target.GetType());
+                    named.Name = GetUniqueName(registrar, name);
+                }
+                catch
+                {
+                    named.Name = name;
+                }
             }
             if (target is SimpleEntry simpleEntry)
             {
@@ -250,8 +269,43 @@ namespace Eco.Mods.CivicsImpExp
                     simpleEntry.UserDescription = description;
                 }
             }
+            if (target is IProposable proposable)
+            {
+                proposable.InitializeDraftProposable();
+            }
+            if (target is DistrictMap districtMap)
+            {
+                var sizeJson = obj.Value<JArray>("size");
+                var size = new Vector2i(sizeJson.Value<int>(0), sizeJson.Value<int>(1));
+                if (size != districtMap.Map.Size)
+                {
+                    throw new InvalidOperationException($"Tried to import district map with a different world size (expecting {districtMap.Map.Size}, got {size})");
+                }
+                var districts = obj.Value<JArray>("districts");
+                DeserialiseControllerList(districtMap.Districts, districts);
+                var rows = obj.Value<JArray>("data");
+                for (int z = 0; z < size.Y; ++z)
+                {
+                    var row = rows.Value<JArray>(z);
+                    for (int x = 0; x < size.X; ++x)
+                    {
+                        var localId = row.Value<int>(x);
+                        if (localId >= 0)
+                        {
+                            var district = districtMap.Districts[localId];
+                            districtMap.Map[new Vector2i(x, z)] = district.Id;
+                        }
+                    }
+                }
+                districtMap.Changed(nameof(districtMap.Districts));
+                districtMap.Changed(nameof(districtMap.Map));
+                districtMap.UpdateDistricts();
+            }
             DeserialiseObjectProperties(target, obj.Value<JObject>("properties"));
-            return target;
+            if (target is IProposable proposable2)
+            {
+                proposable2.SetProposedState(ProposableState.Draft, true, true);
+            }
         }
 
         private static void DeserialiseControllerList(object target, JArray token)

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace Eco.Mods.CivicsImpExp
 {
@@ -20,6 +19,7 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Civics.Titles;
     using Gameplay.Civics.Demographics;
     using Gameplay.Civics.Constitutional;
+    using Gameplay.Civics.Districts;
     using Gameplay.Civics.Misc;
     using Gameplay.Objects;
     using Gameplay.Components;
@@ -50,6 +50,7 @@ namespace Eco.Mods.CivicsImpExp
                 case "demographic": registrar = Registrars.Get<Demographic>(); break;
                 case "constitution": registrar = Registrars.Get<Constitution>(); break;
                 case "amendment": registrar = Registrars.Get<ConstitutionalAmendment>(); break;
+                case "districtmap": registrar = Registrars.Get<DistrictMap>(); break;
                 default:
                     user.Player.Msg(new LocString($"Unknown civic type '{type}' (expecting one of 'law', 'electionprocess', 'electedtitle', 'demographic', 'constitution', 'amendment')"));
                     return;

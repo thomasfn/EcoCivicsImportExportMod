@@ -12,9 +12,12 @@ namespace Eco.Mods.CivicsImpExp
 
     using Shared.Networking;
     using Shared.Localization;
+    using Shared.Math;
 
+    using Gameplay.LegislationSystem;
     using Gameplay.Civics.Misc;
     using Gameplay.Civics.GameValues;
+    using Gameplay.Civics.Districts;
     using Gameplay.GameActions;
     using Gameplay.Utils;
 
@@ -34,7 +37,15 @@ namespace Eco.Mods.CivicsImpExp
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var rootObj = SerialiseGenericObject(value, value as IHasSubRegistrarEntries);
+            JObject rootObj;
+            if (value is DistrictMap districtMap)
+            {
+                rootObj = SerialiseDistrictMap(districtMap);
+            }
+            else
+            {
+                rootObj = SerialiseGenericObject(value, value as IHasSubRegistrarEntries);
+            }
             rootObj.AddFirst(new JProperty("version", new int[] { MajorVersion, MinorVersion }));
             rootObj.WriteTo(writer);
         }
@@ -135,6 +146,10 @@ namespace Eco.Mods.CivicsImpExp
             {
                 return SerialiseGameValue(gameValue);
             }
+            else if (value is DistrictMap districtMap)
+            {
+                return SerialiseDistrictMap(districtMap);
+            }
             else if (value.GetType().IsEnum)
             {
                 return value.GetType().GetEnumName(value);
@@ -209,6 +224,28 @@ namespace Eco.Mods.CivicsImpExp
                 jsonObj.Add(new JProperty("type", gameValue.GetType().FullName));
                 jsonObj.Add(new JProperty("properties", SerialiseObjectProperties(gameValue)));
             }
+            return jsonObj;
+        }
+
+        private JObject SerialiseDistrictMap(DistrictMap districtMap)
+        {
+            var jsonObj = SerialiseGenericObject(districtMap, districtMap);
+            jsonObj.Add(new JProperty("districts", SerialiseList(districtMap.Districts, districtMap)));
+            var size = districtMap.Map.Size;
+            jsonObj.Add(new JProperty("size", new JArray(size.X, size.Y)));
+            var dataArr = new JArray();
+            for (int z = 0; z < size.Y; ++z)
+            {
+                var row = new JArray();
+                for (int x = 0; x < size.X; ++x)
+                {
+                    int districtId = districtMap.Map[new Vector2i(x, z)];
+                    var district = districtMap.GetDistrictByID(districtId);
+                    row.Add(districtMap.Districts.IndexOf(district));
+                }
+                dataArr.Add(row);
+            }
+            jsonObj.Add(new JProperty("data", dataArr));
             return jsonObj;
         }
 
