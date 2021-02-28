@@ -52,22 +52,19 @@ The civic object may have dependencies on other objects - for example, a law may
 
 ### Windows
 
-1. Enable WSL and install a linux distribution on it
-2. Install docker on the linux distribution
-3. Navigate to the mounted cloned EcoCivicsImportExportMod folder within the WSL linux shell
-4. Run `extract-dlls.sh` to pull the Eco server dlls from the official docker image
-5. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019
-6. Build the project in Visual Studio
-7. Find the artifact in `EcoCivicsImportExportMod\bin\Debug\netcoreapp3.1`
+1. Login to the [Eco Website](https://play.eco/) and download the latest modkit
+2. Extract the modkit and copy the dlls from `ReferenceAssemblies` to `eco-dlls` in the root directory (create the folder if it doesn't exist)
+3. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019
+4. Build the project in Visual Studio
+5. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\netcoreapp3.1`
 
 ### Linux
 
-1. Install docker
-2. Run `extract-dlls.sh` to pull the Eco server dlls from the official docker image
-3. Enter the `EcoCivicsImportExportMod` directory and run:
+1. Run `fetch-eco-reference-assemblies.sh`
+2. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
-`dotnet build --no-restore`
-4. Find the artifact in `EcoCivicsImportExportMod/bin/Debug/netcoreapp3.1`
+`dotnet build`
+3. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/netcoreapp3.1`
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
