@@ -1,0 +1,30 @@
+name: build for release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core 3.1
+      uses: actions/setup-dotnet@v1.6.0
+      with:
+        dotnet-version: '3.1.x'
+    - name: Fetch dependencies
+      run: dotnet restore
+      env:
+        DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
+    - name: Extract Eco dlls
+      run: sh fetch-eco-reference-assemblies.sh
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+      env:
+        DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
+    - name: Upload dotnet test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: mod-binaries-${{GITHUB_REF}}
+        path: EcoCivicsImportExportMod/bin/Release/netcoreapp3.1/EcoCivicsImportExportMod.*
