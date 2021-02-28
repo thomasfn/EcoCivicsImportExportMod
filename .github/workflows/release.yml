@@ -26,5 +26,5 @@ jobs:
     - name: Upload build artifact
       uses: actions/upload-artifact@v2
       with:
-        name: mod-binaries-${{GITHUB_REF}}
+        name: mod-binaries-${{github.event.release.tag_name}}
         path: EcoCivicsImportExportMod/bin/Release/netcoreapp3.1/EcoCivicsImportExportMod.*
