@@ -183,6 +183,7 @@ namespace Eco.Mods.CivicsImpExp
             var worldObject = FindFreeWorldObjectForCivic(obj.GetType());
             if (worldObject == null)
             {
+                Registrars.Remove(obj);
                 user.Player.Msg(new LocString($"Failed to import civic: no world objects found with available space for the civic"));
                 return;
             }
