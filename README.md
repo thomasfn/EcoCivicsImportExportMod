@@ -19,7 +19,7 @@ Supported civics:
 All chat commands require admin privileges.
 
 ### Exporting Civics
-The export command will serialise the specific civic object to a json file in the server's working directory, under a folder called `civics`.
+The `export` command will serialise the specific civic object to a json file in the server's working directory, under a folder called `civics`.
 
 `/civics export <civictype>,<id>`
 e.g. `/civics export law,10`
@@ -37,6 +37,15 @@ To find the ID of a civic, tag it in chat and hover it, the ID is displayed at t
 The filename of the exported file will be as follows (relative to the server's working directory): `civics/<civictype>-<id>.json`. The command will inform you of this filename if serialisation is successful.
 
 You can rename the file outside of the game if you wish, as the name of the file is specified in the import command.
+
+The `exportallof` command will serialise all civic objects of a type. It's the equivalent of running the `export` command for each civic object individually.
+
+`/civics exportallof <civictype>`
+e.g. `/civics exportallof law`
+
+The `exportall` command will serialise all civic objects of all types. It's the equivalent of running the `exportallof` command for each civic type individually.
+
+`/civics exportall`
 
 ### Importing Civics
 The import command will attempt to deserialise a civic object from the specified json file. If it fails at any stage, the civic object (if it managed to created one) will be immediately destroyed with no side effects.
