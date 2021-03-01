@@ -26,7 +26,6 @@ namespace Eco.Mods.CivicsImpExp
     public static class Importer
     {
         private static readonly Regex matchNumberAtEnd = new Regex(@"[0-9]+$", RegexOptions.Compiled);
-        private static readonly Regex matchAssemblyFromType = new Regex(@"^[a-zA-Z]+\.[a-zA-Z]+", RegexOptions.Compiled);
 
         public static IHasID Import(string filename)
         {
