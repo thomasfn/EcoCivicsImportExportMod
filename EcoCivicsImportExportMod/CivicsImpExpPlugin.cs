@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.IO;
+using System.Collections.Generic;
 
 namespace Eco.Mods.CivicsImpExp
 {
@@ -26,6 +27,8 @@ namespace Eco.Mods.CivicsImpExp
 
     public class CivicsImpExpPlugin : IModKitPlugin, IInitializablePlugin, IChatCommandHandler
     {
+        private static IReadOnlyDictionary<string, Registrar> civicTypeToRegistrar;
+
         public string GetStatus()
         {
             return "Idle";
@@ -33,7 +36,25 @@ namespace Eco.Mods.CivicsImpExp
 
         public void Initialize(TimedTask timer)
         {
+            civicTypeToRegistrar = new Dictionary<string, Registrar>
+            {
+                {"law",             Registrars.Get<Law>() },
+                {"electionprocess", Registrars.Get<ElectionProcess>() },
+                {"electedtitle",    Registrars.Get<ElectedTitle>() },
+                {"demographic",     Registrars.Get<Demographic>() },
+                {"constitution",    Registrars.Get<Constitution>() },
+                {"amendment",       Registrars.Get<ConstitutionalAmendment>() },
+                {"districtmap",     Registrars.Get<DistrictMap>() },
+            };
             Logger.Info("Initialized and ready to go");
+        }
+
+        private static bool TryGetRegistrarForCivicType(User user, string type, out Registrar registrar)
+        {
+            if (civicTypeToRegistrar.TryGetValue(type, out registrar)) { return true; }
+            user.Player.Msg(new LocString($"Unknown civic type '{type}' (expecting one of {string.Join(", ", civicTypeToRegistrar.Keys.Select(type => $"'{type}'"))})"));
+            registrar = null;
+            return false;
         }
 
         #region Exporting
@@ -41,20 +62,7 @@ namespace Eco.Mods.CivicsImpExp
         [ChatSubCommand("Civics", "Exports a civic object to a json file.", ChatAuthorizationLevel.Admin)]
         public static void Export(User user, string type, int id)
         {
-            Registrar registrar;
-            switch (type)
-            {
-                case "law": registrar = Registrars.Get<Law>(); break;
-                case "electionprocess": registrar = Registrars.Get<ElectionProcess>(); break;
-                case "electedtitle": registrar = Registrars.Get<ElectedTitle>(); break;
-                case "demographic": registrar = Registrars.Get<Demographic>(); break;
-                case "constitution": registrar = Registrars.Get<Constitution>(); break;
-                case "amendment": registrar = Registrars.Get<ConstitutionalAmendment>(); break;
-                case "districtmap": registrar = Registrars.Get<DistrictMap>(); break;
-                default:
-                    user.Player.Msg(new LocString($"Unknown civic type '{type}' (expecting one of 'law', 'electionprocess', 'electedtitle', 'demographic', 'constitution', 'amendment')"));
-                    return;
-            }
+            if (!TryGetRegistrarForCivicType(user, type, out var registrar)) { return; }
             var obj = registrar.GetById(id);
             if (obj == null)
             {
@@ -73,6 +81,73 @@ namespace Eco.Mods.CivicsImpExp
                 return;
             }
             user.Player.Msg(new LocString($"Exported {type} {id} to '{outPath}'"));
+        }
+
+        private static void ExportAllOfInternal(User user, string type, ref int successCount, ref int failCount)
+        {
+            if (!TryGetRegistrarForCivicType(user, type, out var registrar)) { return; }
+            foreach (var obj in registrar.All())
+            {
+                string outPath = Path.Combine("civics", $"{type}-{obj.Id}.json");
+                try
+                {
+                    Exporter.Export(obj, outPath);
+                    ++successCount;
+                }
+                catch (Exception ex)
+                {
+                    user.Player.Msg(new LocString($"Failed to export {type} {obj.Id}: {ex.Message}"));
+                    Logger.Error(ex.ToString());
+                    ++failCount;
+                }
+            }
+        }
+
+        [ChatSubCommand("Civics", "Exports all civic objects of a kind to json files.", ChatAuthorizationLevel.Admin)]
+        public static void ExportAllOf(User user, string type)
+        {
+            int successCount = 0, failCount = 0;
+            ExportAllOfInternal(user, type, ref successCount, ref failCount);
+            if (failCount > 0)
+            {
+                if (successCount == 0)
+                {
+                    user.Player.Msg(new LocString($"Failed to export all {failCount} of {type}"));
+                }
+                else
+                {
+                    user.Player.Msg(new LocString($"Succesfully exported {successCount} of {type}, but failed to export {failCount} of {type}"));
+                }
+            }
+            else
+            {
+                user.Player.Msg(new LocString($"Succesfully exported all {successCount} of {type}"));
+            }
+        }
+
+        [ChatSubCommand("Civics", "Exports all civic objects to json files.", ChatAuthorizationLevel.Admin)]
+        public static void ExportAll(User user)
+        {
+            int successCount = 0, failCount = 0;
+            foreach (var type in civicTypeToRegistrar.Keys)
+            {
+                ExportAllOfInternal(user, type, ref successCount, ref failCount);
+            }
+            if (failCount > 0)
+            {
+                if (successCount == 0)
+                {
+                    user.Player.Msg(new LocString($"Failed to export all {failCount} civic objects"));
+                }
+                else
+                {
+                    user.Player.Msg(new LocString($"Succesfully exported {successCount} civic objects, but failed to export {failCount} of civic objects"));
+                }
+            }
+            else
+            {
+                user.Player.Msg(new LocString($"Succesfully exported all {successCount} civic objects"));
+            }
         }
 
         #endregion
@@ -108,6 +183,7 @@ namespace Eco.Mods.CivicsImpExp
             var worldObject = FindFreeWorldObjectForCivic(obj.GetType());
             if (worldObject == null)
             {
+                Registrars.Remove(obj);
                 user.Player.Msg(new LocString($"Failed to import civic: no world objects found with available space for the civic"));
                 return;
             }

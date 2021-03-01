@@ -26,7 +26,6 @@ namespace Eco.Mods.CivicsImpExp
     public static class Importer
     {
         private static readonly Regex matchNumberAtEnd = new Regex(@"[0-9]+$", RegexOptions.Compiled);
-        private static readonly Regex matchAssemblyFromType = new Regex(@"^[a-zA-Z]+\.[a-zA-Z]+", RegexOptions.Compiled);
 
         public static IHasID Import(string filename)
         {
@@ -195,14 +194,7 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         private static Type ResolveType(string typeName)
-        {
-            var assemblyNameMatch = matchAssemblyFromType.Match(typeName);
-            if (!assemblyNameMatch.Success)
-            {
-                throw new InvalidOperationException($"Unable to determine assembly name for '{typeName}'");
-            }
-            return Type.GetType($"{typeName}, {assemblyNameMatch.Value}", true);
-        }
+            => ReflectionUtils.GetTypeFromFullName(typeName);
 
         private static object ResolveReference(Type type, string name)
         {
