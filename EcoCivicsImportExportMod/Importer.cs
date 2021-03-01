@@ -195,14 +195,7 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         private static Type ResolveType(string typeName)
-        {
-            var assemblyNameMatch = matchAssemblyFromType.Match(typeName);
-            if (!assemblyNameMatch.Success)
-            {
-                throw new InvalidOperationException($"Unable to determine assembly name for '{typeName}'");
-            }
-            return Type.GetType($"{typeName}, {assemblyNameMatch.Value}", true);
-        }
+            => ReflectionUtils.GetTypeFromFullName(typeName);
 
         private static object ResolveReference(Type type, string name)
         {
