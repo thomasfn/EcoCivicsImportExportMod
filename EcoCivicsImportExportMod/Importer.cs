@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Net;
 
 using Newtonsoft.Json.Linq;
 
@@ -27,10 +28,25 @@ namespace Eco.Mods.CivicsImpExp
     {
         private static readonly Regex matchNumberAtEnd = new Regex(@"[0-9]+$", RegexOptions.Compiled);
 
+        private static readonly WebClient webClient = new WebClient();
+
         public static IHasID Import(string filename)
         {
-            string json = File.ReadAllText(filename);
-            JObject jsonObj = JObject.Parse(json);
+            string text;
+            if (Uri.TryCreate(filename, UriKind.Absolute, out Uri uri))
+            {
+                text = webClient.DownloadString(uri);
+            }
+            else
+            {
+                text = File.ReadAllText(filename);
+            }
+            return ImportFromText(text);
+        }
+
+        public static IHasID ImportFromText(string text)
+        {
+            JObject jsonObj = JObject.Parse(text);
             string typeName = jsonObj.Value<string>("type");
             Type type = Type.GetType($"{typeName}, Eco.Gameplay", true);
             var registrar = Registrars.Get(type);
