@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Net;
 
 using Newtonsoft.Json.Linq;
 
@@ -27,10 +28,25 @@ namespace Eco.Mods.CivicsImpExp
     {
         private static readonly Regex matchNumberAtEnd = new Regex(@"[0-9]+$", RegexOptions.Compiled);
 
-        public static IHasID Import(string filename)
+        private static readonly WebClient webClient = new WebClient();
+
+        public static IHasID Import(string source)
         {
-            string json = File.ReadAllText(filename);
-            JObject jsonObj = JObject.Parse(json);
+            string text;
+            if (Uri.TryCreate(source, UriKind.Absolute, out Uri uri))
+            {
+                text = webClient.DownloadString(uri);
+            }
+            else
+            {
+                text = File.ReadAllText(Path.Combine(CivicsImpExpPlugin.ImportExportDirectory, source));
+            }
+            return ImportFromText(text);
+        }
+
+        public static IHasID ImportFromText(string text)
+        {
+            JObject jsonObj = JObject.Parse(text);
             string typeName = jsonObj.Value<string>("type");
             Type type = Type.GetType($"{typeName}, Eco.Gameplay", true);
             var registrar = Registrars.Get(type);
@@ -56,10 +72,22 @@ namespace Eco.Mods.CivicsImpExp
             }
             catch (Exception ex)
             {
-                Registrars.Remove(obj);
+                Cleanup(obj);
                 throw ex;
             }
             return obj;
+        }
+
+        public static void Cleanup(IHasID obj)
+        {
+            Registrars.Remove(obj);
+            if (obj is IHasSubRegistrarEntries hasSubRegistrarEntries)
+            {
+                foreach (var subObj in hasSubRegistrarEntries.SubRegistrarEntries)
+                {
+                    Cleanup(subObj);
+                }
+            }
         }
 
         #region Deserialisation
@@ -386,8 +414,13 @@ namespace Eco.Mods.CivicsImpExp
             var arr = obj.Value<JArray>("entries");
             foreach (JToken entry in arr)
             {
-                // TODO: Can a GamePickerList ever hold something that isn't Type? If not, why is the ControllerHashSet of object, and not Type? 
                 gamePickerList.Entries.Add(DeserialiseValueAsType(entry, typeof(Type)));
+            }
+            string internalDescription = obj.Value<string>("internalDescription");
+            if (!string.IsNullOrEmpty(internalDescription))
+            {
+                gamePickerList.InternalDescription = internalDescription;
+                gamePickerList.Changed(nameof(gamePickerList.MarkedUpName));
             }
             return gamePickerList;
         }

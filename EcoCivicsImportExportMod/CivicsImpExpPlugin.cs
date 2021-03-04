@@ -29,6 +29,8 @@ namespace Eco.Mods.CivicsImpExp
     {
         private static IReadOnlyDictionary<string, Registrar> civicTypeToRegistrar;
 
+        public const string ImportExportDirectory = "civics";
+
         public string GetStatus()
         {
             return "Idle";
@@ -47,6 +49,7 @@ namespace Eco.Mods.CivicsImpExp
                 {"districtmap",     Registrars.Get<DistrictMap>() },
             };
             Logger.Info("Initialized and ready to go");
+            Directory.CreateDirectory(ImportExportDirectory);
         }
 
         private static bool TryGetRegistrarForCivicType(User user, string type, out Registrar registrar)
@@ -88,7 +91,7 @@ namespace Eco.Mods.CivicsImpExp
             if (!TryGetRegistrarForCivicType(user, type, out var registrar)) { return; }
             foreach (var obj in registrar.All())
             {
-                string outPath = Path.Combine("civics", $"{type}-{obj.Id}.json");
+                string outPath = Path.Combine(ImportExportDirectory, $"{type}-{obj.Id}.json");
                 try
                 {
                     Exporter.Export(obj, outPath);
@@ -166,13 +169,12 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         [ChatSubCommand("Civics", "Imports a civic object from a json file.", ChatAuthorizationLevel.Admin)]
-        public static void Import(User user, string filename)
+        public static void Import(User user, string source)
         {
-            string inPath = Path.Combine("civics", filename);
             IHasID obj;
             try
             {
-                obj = Importer.Import(inPath);
+                obj = Importer.Import(source);
             }
             catch (Exception ex)
             {
@@ -183,13 +185,13 @@ namespace Eco.Mods.CivicsImpExp
             var worldObject = FindFreeWorldObjectForCivic(obj.GetType());
             if (worldObject == null)
             {
-                Registrars.Remove(obj);
+                Importer.Cleanup(obj);
                 user.Player.Msg(new LocString($"Failed to import civic: no world objects found with available space for the civic"));
                 return;
             }
             var proposable = obj as IProposable;
             proposable.SetHostObject(worldObject);
-            user.Player.Msg(new LocString($"Imported {proposable.UILink()} from '{inPath}' onto {worldObject.UILink()}"));
+            user.Player.Msg(new LocString($"Imported {proposable.UILink()} from '{source}' onto {worldObject.UILink()}"));
         }
 
         #endregion

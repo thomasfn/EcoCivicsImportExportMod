@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Net;
 
 using Newtonsoft.Json;
 
@@ -8,10 +10,20 @@ namespace Eco.Mods.CivicsImpExp
 
     public static class Exporter
     {
-        public static void Export(IHasID civicObject, string filename)
+        private static readonly WebClient webClient = new WebClient();
+
+        public static void Export(IHasID civicObject, string destination)
         {
-            string json = JsonConvert.SerializeObject(civicObject, Formatting.Indented, new CivicsJsonConverter());
-            File.WriteAllText(filename, json);
+            string text = JsonConvert.SerializeObject(civicObject, Formatting.Indented, new CivicsJsonConverter());
+            if (Uri.TryCreate(destination, UriKind.Absolute, out Uri uri))
+            {
+                webClient.UploadString(uri, text);
+            }
+            else
+            {
+                File.WriteAllText(destination, text);
+            }
+            
         }
     }
 }
