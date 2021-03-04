@@ -12,16 +12,16 @@ namespace Eco.Mods.CivicsImpExp
     {
         private static readonly WebClient webClient = new WebClient();
 
-        public static void Export(IHasID civicObject, string filename)
+        public static void Export(IHasID civicObject, string destination)
         {
             string text = JsonConvert.SerializeObject(civicObject, Formatting.Indented, new CivicsJsonConverter());
-            if (Uri.TryCreate(filename, UriKind.Absolute, out Uri uri))
+            if (Uri.TryCreate(destination, UriKind.Absolute, out Uri uri))
             {
                 webClient.UploadString(uri, text);
             }
             else
             {
-                File.WriteAllText(filename, text);
+                File.WriteAllText(destination, text);
             }
             
         }

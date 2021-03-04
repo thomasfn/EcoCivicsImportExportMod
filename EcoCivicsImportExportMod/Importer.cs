@@ -30,16 +30,16 @@ namespace Eco.Mods.CivicsImpExp
 
         private static readonly WebClient webClient = new WebClient();
 
-        public static IHasID Import(string filename)
+        public static IHasID Import(string source)
         {
             string text;
-            if (Uri.TryCreate(filename, UriKind.Absolute, out Uri uri))
+            if (Uri.TryCreate(source, UriKind.Absolute, out Uri uri))
             {
                 text = webClient.DownloadString(uri);
             }
             else
             {
-                text = File.ReadAllText(filename);
+                text = File.ReadAllText(Path.Combine(CivicsImpExpPlugin.ImportExportDirectory, source));
             }
             return ImportFromText(text);
         }
