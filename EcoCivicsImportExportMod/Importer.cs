@@ -72,10 +72,22 @@ namespace Eco.Mods.CivicsImpExp
             }
             catch (Exception ex)
             {
-                Registrars.Remove(obj);
+                Cleanup(obj);
                 throw ex;
             }
             return obj;
+        }
+
+        public static void Cleanup(IHasID obj)
+        {
+            Registrars.Remove(obj);
+            if (obj is IHasSubRegistrarEntries hasSubRegistrarEntries)
+            {
+                foreach (var subObj in hasSubRegistrarEntries.SubRegistrarEntries)
+                {
+                    Cleanup(subObj);
+                }
+            }
         }
 
         #region Deserialisation
