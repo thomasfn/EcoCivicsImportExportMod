@@ -220,6 +220,7 @@ namespace Eco.Mods.CivicsImpExp
             jsonObj.Add(new JProperty("type", "GamePickerList"));
             jsonObj.Add(new JProperty("mustDeriveType", SerialiseValue(gamePickerListValue.MustDeriveType, inlineObjectContext)));
             jsonObj.Add(new JProperty("requiredTag", SerialiseValue(gamePickerListValue.RequiredTag, inlineObjectContext)));
+            jsonObj.Add(new JProperty("internalDescription", SerialiseValue(gamePickerListValue.InternalDescription, inlineObjectContext)));
             jsonObj.Add(new JProperty("entries", SerialiseList(gamePickerListValue.Entries, inlineObjectContext)));
             return jsonObj;
         }

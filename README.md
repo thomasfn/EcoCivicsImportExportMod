@@ -48,9 +48,9 @@ The `exportall` command will serialise all civic objects of all types. It's the 
 `/civics exportall`
 
 ### Importing Civics
-The import command will attempt to deserialise a civic object from the specified json file. If it fails at any stage, the civic object (if it managed to created one) will be immediately destroyed with no side effects.
+The import command will attempt to deserialise a civic object from the specified json file. If it fails at any stage, the civic object (if it managed to created one) will be immediately destroyed with no side effects. The file must be placed in the "civics" folder in the server's working directory. Alternatively, a download URL may be specified.
 
-`/civics import <filename>`
+`/civics import <filename-or-url>`
 e.g. `/civics import law-10.json`
 
 The civic object will be given draft status with the command executor as the owner, and put in the first available civic slot (e.g. a law will go to the first available Court). If there are no slots available, the command will fail. The executor of the command should have civic privileges to propose changes to civics of that type, or they may not be able to actually bring the imported civic to life.
