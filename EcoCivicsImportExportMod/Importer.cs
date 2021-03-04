@@ -402,8 +402,13 @@ namespace Eco.Mods.CivicsImpExp
             var arr = obj.Value<JArray>("entries");
             foreach (JToken entry in arr)
             {
-                // TODO: Can a GamePickerList ever hold something that isn't Type? If not, why is the ControllerHashSet of object, and not Type? 
                 gamePickerList.Entries.Add(DeserialiseValueAsType(entry, typeof(Type)));
+            }
+            string internalDescription = obj.Value<string>("internalDescription");
+            if (!string.IsNullOrEmpty(internalDescription))
+            {
+                gamePickerList.InternalDescription = internalDescription;
+                gamePickerList.Changed(nameof(gamePickerList.MarkedUpName));
             }
             return gamePickerList;
         }
