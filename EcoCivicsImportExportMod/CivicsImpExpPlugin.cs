@@ -49,6 +49,7 @@ namespace Eco.Mods.CivicsImpExp
                 {"districtmap",     Registrars.Get<DistrictMap>() },
             };
             Logger.Info("Initialized and ready to go");
+            Directory.CreateDirectory(ImportExportDirectory);
         }
 
         private static bool TryGetRegistrarForCivicType(User user, string type, out Registrar registrar)
