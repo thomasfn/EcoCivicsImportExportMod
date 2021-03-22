@@ -69,7 +69,7 @@ The civic object may have dependencies on other objects - for example, a law may
 
 ### Linux
 
-1. Run `fetch-eco-reference-assemblies.sh`
+1. Run `MODKIT_VERSION="0.9.2.4-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
 2. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
