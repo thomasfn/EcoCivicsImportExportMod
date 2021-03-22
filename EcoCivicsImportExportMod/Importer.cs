@@ -284,7 +284,7 @@ namespace Eco.Mods.CivicsImpExp
                 try
                 {
                     var registrar = Registrars.Get(target.GetType());
-                    named.Name = GetUniqueName(registrar, name);
+                    registrar.Rename(target as IHasID, GetUniqueName(registrar, name), true);
                 }
                 catch
                 {
