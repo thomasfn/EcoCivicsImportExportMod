@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Net;
+using System.Collections.Generic;
 
 using Newtonsoft.Json.Linq;
 
@@ -24,13 +25,57 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.GameActions;
     using Gameplay.Utils;
 
+    public class ImportContext
+    {
+        public IList<IHasID> ImportedObjects { get; } = new List<IHasID>();
+
+        public IDictionary<CivicReference, IHasID> ReferenceMap { get; } = new Dictionary<CivicReference, IHasID>();
+
+        public void Import(BundledCivic bundledCivic)
+        {
+            var registrar = Registrars.Get(bundledCivic.Type);
+            if (registrar == null)
+            {
+                throw new InvalidOperationException($"No registrar found for type '{bundledCivic.Type.FullName}'");
+            }
+            var obj = Activator.CreateInstance(bundledCivic.Type) as IHasID;
+            registrar.Insert(obj);
+
+            try
+            {
+                if (obj is IProposable proposable)
+                {
+                    proposable.InitializeDraftProposable();
+                    Importer.DeserialiseGenericObject(bundledCivic.Data, obj);
+                    proposable.SetProposedState(ProposableState.Draft, true, true);
+                }
+                else
+                {
+                    Importer.DeserialiseGenericObject(bundledCivic.Data, obj);
+                }
+            }
+            finally
+            {
+                ImportedObjects.Add(obj);
+                ReferenceMap.Add(new CivicReference(bundledCivic.Type, bundledCivic.Name), obj);
+            }
+        }
+
+        public void Clear()
+        {
+            Importer.Cleanup(ImportedObjects);
+            ImportedObjects.Clear();
+            ReferenceMap.Clear();
+        }
+    }
+
     public static class Importer
     {
         private static readonly Regex matchNumberAtEnd = new Regex(@"[0-9]+$", RegexOptions.Compiled);
 
         private static readonly WebClient webClient = new WebClient();
 
-        public static IHasID Import(string source)
+        public static IEnumerable<IHasID> Import(string source)
         {
             string text;
             if (Uri.TryCreate(source, UriKind.Absolute, out Uri uri))
@@ -41,41 +86,8 @@ namespace Eco.Mods.CivicsImpExp
             {
                 text = File.ReadAllText(Path.Combine(CivicsImpExpPlugin.ImportExportDirectory, source));
             }
-            return ImportFromText(text);
-        }
-
-        public static IHasID ImportFromText(string text)
-        {
-            JObject jsonObj = JObject.Parse(text);
-            string typeName = jsonObj.Value<string>("type");
-            Type type = Type.GetType($"{typeName}, Eco.Gameplay", true);
-            var registrar = Registrars.Get(type);
-            if (registrar == null)
-            {
-                throw new InvalidOperationException($"Invalid type '{typeName}'");
-            }
-            var obj = Activator.CreateInstance(type) as IHasID;
-            registrar.Insert(obj);
-            try
-            {
-                if (obj is IProposable proposable)
-                {
-                    proposable.InitializeDraftProposable();
-                    Deserialise(obj, jsonObj);
-                    proposable.SetProposedState(ProposableState.Draft, true, true);
-                }
-                else
-                {
-                    Deserialise(obj, jsonObj);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Cleanup(obj);
-                throw ex;
-            }
-            return obj;
+            var bundle = CivicBundle.LoadFromText(text);
+            return bundle.ImportAll();
         }
 
         public static void Cleanup(IHasID obj)
@@ -87,6 +99,14 @@ namespace Eco.Mods.CivicsImpExp
                 {
                     Cleanup(subObj);
                 }
+            }
+        }
+
+        public static void Cleanup(IEnumerable<IHasID> objs)
+        {
+            foreach (var obj in objs)
+            {
+                Cleanup(obj);
             }
         }
 
@@ -271,7 +291,7 @@ namespace Eco.Mods.CivicsImpExp
             return target;
         }
 
-        private static void DeserialiseGenericObject(JObject obj, object target)
+        public static void DeserialiseGenericObject(JObject obj, object target)
         {
             string name = obj.Value<string>("name");
             bool isRef = obj.Value<bool>("reference");

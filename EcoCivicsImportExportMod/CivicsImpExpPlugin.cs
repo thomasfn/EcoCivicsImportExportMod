@@ -171,10 +171,10 @@ namespace Eco.Mods.CivicsImpExp
         [ChatSubCommand("Civics", "Imports a civic object from a json file.", ChatAuthorizationLevel.Admin)]
         public static void Import(User user, string source)
         {
-            IHasID obj;
+            IEnumerable<IHasID> importedObjects;
             try
             {
-                obj = Importer.Import(source);
+                importedObjects = Importer.Import(source);
             }
             catch (Exception ex)
             {
@@ -182,16 +182,21 @@ namespace Eco.Mods.CivicsImpExp
                 Logger.Error(ex.ToString());
                 return;
             }
-            var worldObject = FindFreeWorldObjectForCivic(obj.GetType());
-            if (worldObject == null)
+            // TODO: A big cleanup of assigning civic objects to world objects... we want to find a slot for everything BEFORE we fully commit to the import!
+            foreach (var obj in importedObjects)
             {
-                Importer.Cleanup(obj);
-                user.Player.Msg(new LocString($"Failed to import civic: no world objects found with available space for the civic"));
-                return;
+                var worldObject = FindFreeWorldObjectForCivic(obj.GetType());
+                if (worldObject == null)
+                {
+                    Importer.Cleanup(importedObjects);
+                    user.Player.Msg(new LocString($"Failed to import civic of type '{obj.GetType().Name}': no world objects found with available space for the civic"));
+                    return;
+                }
+                var proposable = obj as IProposable;
+                proposable.SetHostObject(worldObject);
+                user.Player.Msg(new LocString($"Imported {proposable.UILink()} from '{source}' onto {worldObject.UILink()}"));
             }
-            var proposable = obj as IProposable;
-            proposable.SetHostObject(worldObject);
-            user.Player.Msg(new LocString($"Imported {proposable.UILink()} from '{source}' onto {worldObject.UILink()}"));
+            
         }
 
         #endregion
