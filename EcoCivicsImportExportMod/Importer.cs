@@ -75,7 +75,7 @@ namespace Eco.Mods.CivicsImpExp
 
         private static readonly WebClient webClient = new WebClient();
 
-        public static IEnumerable<IHasID> Import(string source)
+        public static CivicBundle ImportBundle(string source)
         {
             string text;
             if (Uri.TryCreate(source, UriKind.Absolute, out Uri uri))
@@ -86,8 +86,7 @@ namespace Eco.Mods.CivicsImpExp
             {
                 text = File.ReadAllText(Path.Combine(CivicsImpExpPlugin.ImportExportDirectory, source));
             }
-            var bundle = CivicBundle.LoadFromText(text);
-            return bundle.ImportAll();
+            return CivicBundle.LoadFromText(text);
         }
 
         public static void Cleanup(IHasID obj)

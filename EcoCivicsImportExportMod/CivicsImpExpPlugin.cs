@@ -31,6 +31,8 @@ namespace Eco.Mods.CivicsImpExp
 
         public const string ImportExportDirectory = "civics";
 
+        private static readonly List<IHasID> lastImport = new List<IHasID>();
+
         public string GetStatus()
         {
             return "Idle";
@@ -168,13 +170,53 @@ namespace Eco.Mods.CivicsImpExp
             return relevantWorldObjects.FirstOrDefault().worldObject;
         }
 
+        private static int CountFreeSlotsForCivic(Type civicType)
+        {
+            var worldObjectManager = ServiceHolder<IWorldObjectManager>.Obj;
+            return worldObjectManager.All
+                .Where((worldObject) => worldObject.HasComponent<CivicObjectComponent>())
+                .Select((worldObject) => (worldObject, worldObject.GetComponent<CivicObjectComponent>()))
+                .Where((worldObjectAndComp) => worldObjectAndComp.Item2.ObjectType.IsAssignableFrom(civicType))
+                .Select((worldObjectAndComp) => worldObjectAndComp.Item2.MaxCount - worldObjectAndComp.Item2.UsedSlots)
+                .Sum();
+        }
+
         [ChatSubCommand("Civics", "Imports a civic object from a json file.", ChatAuthorizationLevel.Admin)]
         public static void Import(User user, string source)
         {
+            // Import the bundle
+            CivicBundle bundle;
+            try
+            {
+                bundle = Importer.ImportBundle(source);
+            }
+            catch (Exception ex)
+            {
+                user.Player.Msg(new LocString($"Failed to import bundle: {ex.Message}"));
+                Logger.Error(ex.ToString());
+                return;
+            }
+
+            // Check that there are enough free slots for all the civics in the bundle
+            var bundledCivicsByType = bundle.Civics
+                .GroupBy((bundledCivic) => bundledCivic.Type)
+                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key));
+            foreach (var grouping in bundledCivicsByType)
+            {
+                var freeSlots = CountFreeSlotsForCivic(grouping.Key);
+                int importCount = grouping.Count();
+                if (importCount > freeSlots)
+                {
+                    user.Player.Msg(new LocString($"Unable to import {importCount} of {grouping.Key.Name} (only {freeSlots} available slots for this civic type)"));
+                    return;
+                }
+            }
+
+            // Import the objects from the bundle
             IEnumerable<IHasID> importedObjects;
             try
             {
-                importedObjects = Importer.Import(source);
+                importedObjects = bundle.ImportAll();
             }
             catch (Exception ex)
             {
@@ -182,12 +224,17 @@ namespace Eco.Mods.CivicsImpExp
                 Logger.Error(ex.ToString());
                 return;
             }
-            // TODO: A big cleanup of assigning civic objects to world objects... we want to find a slot for everything BEFORE we fully commit to the import!
-            foreach (var obj in importedObjects)
+            lastImport.Clear();
+            lastImport.AddRange(importedObjects);
+
+            // Slot each civic into the relevant world object
+            int numCivics = 0;
+            foreach (var obj in importedObjects.Where((obj) => obj is IProposable))
             {
                 var worldObject = FindFreeWorldObjectForCivic(obj.GetType());
                 if (worldObject == null)
                 {
+                    // This should never happen as we already checked above for free slots and early'd out, but just in case...
                     Importer.Cleanup(importedObjects);
                     user.Player.Msg(new LocString($"Failed to import civic of type '{obj.GetType().Name}': no world objects found with available space for the civic"));
                     return;
@@ -195,8 +242,23 @@ namespace Eco.Mods.CivicsImpExp
                 var proposable = obj as IProposable;
                 proposable.SetHostObject(worldObject);
                 user.Player.Msg(new LocString($"Imported {proposable.UILink()} from '{source}' onto {worldObject.UILink()}"));
+                ++numCivics;
             }
             
+            // If the bundle contains more than civic, wrap it into an election
+            if (numCivics > 1)
+            {
+                // TODO: This
+                // Don't forget to add the election to lastImport!
+            }
+        }
+
+        [ChatSubCommand("Civics", "Undoes the last imported civic bundle. Use with extreme care.", ChatAuthorizationLevel.Admin)]
+        public static void UndoImport(User user)
+        {
+            Importer.Cleanup(lastImport);
+            user.Player.Msg(new LocString($"Deleted {lastImport.Count} objects from the last import"));
+            lastImport.Clear();
         }
 
         #endregion
