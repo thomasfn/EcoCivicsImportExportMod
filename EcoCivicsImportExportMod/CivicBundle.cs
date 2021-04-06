@@ -94,19 +94,14 @@ namespace Eco.Mods.CivicsImpExp
 
         public IHasID CreateStub()
         {
-            var obj = Activator.CreateInstance(Type) as IHasID;
-            obj.Name = Name;
-            Registrars.Get(Type).Insert(obj);
-            return obj;
-        }
-
-        public void Import(IHasID target)
-        {
-            if (target.GetType() != Type)
+            var registrar = Registrars.Get(Type);
+            if (registrar == null)
             {
-                throw new ArgumentException($"Type mismatch (expecting '{Type.FullName}', got '{target.GetType().FullName}')");
+                throw new InvalidOperationException($"No registrar found for type '{Type.FullName}'");
             }
-            Importer.DeserialiseGenericObject(Data, target);
+            var obj = Activator.CreateInstance(Type) as IHasID;
+            registrar.Insert(obj);
+            return obj;
         }
     }
 
@@ -164,6 +159,10 @@ namespace Eco.Mods.CivicsImpExp
             var importContext = new ImportContext();
             try
             {
+                foreach (var civic in Civics)
+                {
+                    importContext.ImportStub(civic);
+                }
                 foreach (var civic in Civics)
                 {
                     importContext.Import(civic);

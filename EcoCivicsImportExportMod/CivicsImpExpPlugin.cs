@@ -261,6 +261,77 @@ namespace Eco.Mods.CivicsImpExp
             lastImport.Clear();
         }
 
+        [ChatSubCommand("Civics", "Prints details about a civic bundle without actually importing anything.", ChatAuthorizationLevel.Admin)]
+        public static void BundleInfo(User user, string source)
+        {
+            // Import the bundle
+            CivicBundle bundle;
+            try
+            {
+                bundle = Importer.ImportBundle(source);
+            }
+            catch (Exception ex)
+            {
+                user.Player.Msg(new LocString($"Failed to import bundle: {ex.Message}"));
+                Logger.Error(ex.ToString());
+                return;
+            }
+
+            // Print type metrics
+            var bundledCivicsByType = bundle.Civics
+                .GroupBy((bundledCivic) => bundledCivic.Type)
+                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key));
+            foreach (var grouping in bundledCivicsByType)
+            {
+                var freeSlots = CountFreeSlotsForCivic(grouping.Key);
+                int importCount = grouping.Count();
+                user.Player.Msg(new LocString($"Bundle has {importCount} of {grouping.Key.Name} (there are {freeSlots} available slots for this civic type)"));
+            }
+
+            // Print reference metrics
+            var importContext = new ImportContext();
+            IList<object> resolvableExternalReferences = new List<object>();
+            IList<CivicReference> unresolvableExternalReferences = new List<CivicReference>();
+            foreach (var civicReference in bundle.ExternalReferences)
+            {
+                if (importContext.TryResolveReference(civicReference, out var resolvedObject))
+                {
+                    resolvableExternalReferences.Add(resolvedObject);
+                }
+                else
+                {
+                    unresolvableExternalReferences.Add(civicReference);
+                }
+            }
+            if ((resolvableExternalReferences.Count + unresolvableExternalReferences.Count) == 0)
+            {
+                user.Player.Msg(new LocString($"Bundle has no external references."));
+            }
+            else
+            {
+                if (resolvableExternalReferences.Count > 0)
+                {
+                    var resRefStr = string.Join(", ", resolvableExternalReferences.Distinct().Select((obj) => obj is ILinkable linkable ? linkable.UILink().ToString() : obj.ToString()));
+                    user.Player.Msg(new LocString($"Bundle has {resolvableExternalReferences.Count} references to the following: {resRefStr}"));
+                    if (unresolvableExternalReferences.Count > 0)
+                    {
+                        var unresRefStr = string.Join(", ", unresolvableExternalReferences.Distinct().Select((civicRef) => $"{civicRef.Type} \"{civicRef.Name}\""));
+                        user.Player.Msg(new LocString($"Bundle has {unresolvableExternalReferences.Count} unresolvable external references: {unresRefStr}"));
+                    }
+                    else
+                    {
+                        user.Player.Msg(new LocString($"Bundle has no unresolvable external references."));
+                    }
+                }
+                else
+                {
+                    var unresRefStr = string.Join(", ", unresolvableExternalReferences.Distinct().Select((civicRef) => $"{civicRef.Type} \"{civicRef.Name}\""));
+                    user.Player.Msg(new LocString($"Bundle has {unresolvableExternalReferences.Count} unresolvable external references: {unresRefStr}"));
+                }
+            }
+
+        }
+
         #endregion
     }
 }
