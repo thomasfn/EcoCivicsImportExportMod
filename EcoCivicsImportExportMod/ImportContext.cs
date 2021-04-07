@@ -236,7 +236,15 @@ namespace Eco.Mods.CivicsImpExp
             {
                 throw new InvalidOperationException($"Can't deserialise a '{typeName}' into a '{expectedType.FullName}'");
             }
-            object target = Activator.CreateInstance(type);
+            object target;
+            if (!string.IsNullOrEmpty(name) && ReferenceMap.TryGetValue(new CivicReference(type, name), out IHasID existingObj))
+            {
+                target = existingObj;
+            }
+            else
+            {
+                target = Activator.CreateInstance(type);
+            }
             DeserialiseGenericObject(obj, target);
             if (target is IHasID hasID)
             {
@@ -246,7 +254,7 @@ namespace Eco.Mods.CivicsImpExp
             return target;
         }
 
-        public void DeserialiseGenericObject(JObject obj, object target)
+        private void DeserialiseGenericObject(JObject obj, object target)
         {
             string name = obj.Value<string>("name");
             bool isRef = obj.Value<bool>("reference");

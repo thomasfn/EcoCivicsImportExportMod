@@ -229,7 +229,7 @@ namespace Eco.Mods.CivicsImpExp
 
             // Slot each civic into the relevant world object
             int numCivics = 0;
-            foreach (var obj in importedObjects.Where((obj) => obj is IProposable))
+            foreach (var obj in importedObjects.Where((obj) => obj is IProposable && !(obj is IParentedEntry)))
             {
                 var worldObject = FindFreeWorldObjectForCivic(obj.GetType());
                 if (worldObject == null)
@@ -237,6 +237,7 @@ namespace Eco.Mods.CivicsImpExp
                     // This should never happen as we already checked above for free slots and early'd out, but just in case...
                     Importer.Cleanup(importedObjects);
                     user.Player.Msg(new LocString($"Failed to import civic of type '{obj.GetType().Name}': no world objects found with available space for the civic"));
+                    lastImport.Clear();
                     return;
                 }
                 var proposable = obj as IProposable;
@@ -286,6 +287,14 @@ namespace Eco.Mods.CivicsImpExp
                 var freeSlots = CountFreeSlotsForCivic(grouping.Key);
                 int importCount = grouping.Count();
                 user.Player.Msg(new LocString($"Bundle has {importCount} of {grouping.Key.Name} (there are {freeSlots} available slots for this civic type)"));
+                var subobjectsByType = grouping
+                    .SelectMany((bundledCivic) => bundledCivic.InlineObjects)
+                    .GroupBy((bundledCivic) => bundledCivic.Type);
+                for (int i = 0, l = subobjectsByType.Count(); i < l; ++i)
+                {
+                    var subGrouping = subobjectsByType.Skip(i).First();
+                    user.Player.Msg(new LocString($" - with {importCount} of {subGrouping.Key.Name}"));
+                }
             }
 
             // Print reference metrics

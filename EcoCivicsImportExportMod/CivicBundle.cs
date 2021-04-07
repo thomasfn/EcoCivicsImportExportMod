@@ -10,8 +10,6 @@ namespace Eco.Mods.CivicsImpExp
 
     using Shared.Utils;
 
-    using Gameplay.Civics.Elections;
-
     public readonly struct CivicReference : IEquatable<CivicReference>
     {
         public readonly Type Type;
@@ -41,6 +39,9 @@ namespace Eco.Mods.CivicsImpExp
 
         public static bool operator !=(CivicReference left, CivicReference right)
             => !(left == right);
+
+        public override string ToString()
+            => $"{Type.Name}:\"{Name}\"";
     }
 
     public readonly struct BundledCivic
@@ -53,30 +54,46 @@ namespace Eco.Mods.CivicsImpExp
 
         public Type Type { get => ReflectionUtils.GetTypeFromFullName(TypeName); }
 
-        public IEnumerable<CivicReference> References { get => SearchForReferences(Data).Distinct(); }
+        public CivicReference AsReference { get => new CivicReference(Type, Name); }
+
+        public IEnumerable<CivicReference> References
+        {
+            get => SearchForInlineNamedObjects(Data, true, true)
+                .Select(t => t.Item1)
+                .Distinct();
+        }
+
+        public IEnumerable<BundledCivic> InlineObjects
+        {
+            get => SearchForInlineNamedObjects(Data, false, true)
+                .Select(t => new BundledCivic(t.Item2));
+        }
 
         public BundledCivic(JObject data)
         {
             Data = data;
         }
 
-        private static IEnumerable<CivicReference> SearchForReferences(JToken target)
+        private static IEnumerable<(CivicReference, JObject)> SearchForInlineNamedObjects(JToken target, bool? references = null, bool ignoreRoot = false)
         {
             if (target is JObject obj)
             {
                 string name = obj.Value<string>("name");
                 string typeName = obj.Value<string>("type");
                 bool isRef = obj.Value<bool>("reference");
-                if (isRef && !string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(typeName))
+                if (!ignoreRoot && !string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(typeName))
                 {
-                    yield return new CivicReference(ReflectionUtils.GetTypeFromFullName(typeName), name);
+                    if (references == null || references.Value == isRef)
+                    {
+                        yield return (new CivicReference(ReflectionUtils.GetTypeFromFullName(typeName), name), obj);
+                    }
                     yield break;
                 }
                 foreach (var pair in obj)
                 {
-                    foreach (var reference in SearchForReferences(pair.Value))
+                    foreach (var referenceTuple in SearchForInlineNamedObjects(pair.Value, references))
                     {
-                        yield return reference;
+                        yield return referenceTuple;
                     }
                 }
             }
@@ -84,9 +101,9 @@ namespace Eco.Mods.CivicsImpExp
             {
                 foreach (var element in arr)
                 {
-                    foreach (var reference in SearchForReferences(element))
+                    foreach (var referenceTuple in SearchForInlineNamedObjects(element, references))
                     {
-                        yield return reference;
+                        yield return referenceTuple;
                     }
                 }
             }
@@ -149,10 +166,13 @@ namespace Eco.Mods.CivicsImpExp
 
         public IEnumerable<CivicReference> AllReferences { get => Civics.SelectMany(c => c.References).Distinct(); }
 
+        public IEnumerable<BundledCivic> AllInlineObjects { get => civics.SelectMany(c => c.InlineObjects); }
+
         public IEnumerable<CivicReference> ExternalReferences { get => AllReferences.Where(r => !ReferenceIsLocal(r)); }
 
         public bool ReferenceIsLocal(CivicReference reference)
-            => Civics.Any(c => c.Type == reference.Type && c.Name == reference.Name);
+            => Civics.Select(c => c.AsReference).Contains(reference)
+            || AllInlineObjects.Select(c => c.AsReference).Contains(reference);
 
         public IEnumerable<IHasID> ImportAll()
         {
@@ -162,6 +182,10 @@ namespace Eco.Mods.CivicsImpExp
                 foreach (var civic in Civics)
                 {
                     importContext.ImportStub(civic);
+                    foreach (var inlineCivic in civic.InlineObjects)
+                    {
+                        importContext.ImportStub(inlineCivic);
+                    }
                 }
                 foreach (var civic in Civics)
                 {
