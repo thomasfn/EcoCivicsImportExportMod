@@ -32,7 +32,9 @@
                 <MenuItem Header="_Redo" Command="ApplicationCommands.Redo" />
             </MenuItem>
         </Menu>
-        <local:CivicBundleView DataContext="{Binding CivicBundle}" Visibility="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.ShowLoadedView}" />
-        <Label Content="Drag a bundle or civic file onto me to begin!" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ShowUnloadedHint}"></Label>
+        <Grid>
+            <local:CivicBundleView Grid.Column="0" Grid.Row="0" DataContext="{Binding CivicBundle}" Visibility="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.ShowLoadedView}" />
+            <Label Grid.Column="0" Grid.Row="0" Content="Drag a bundle or civic file onto me to begin!" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ShowUnloadedHint}"></Label>
+        </Grid>
     </DockPanel>
 </Window>

@@ -56,7 +56,10 @@ namespace EcoCivicsImportExportMod.Bundler.View
 
         private void SaveAsCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            // TODO: Open save window
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "Json files (*.json)|*.json";
+            if (saveFileDialog.ShowDialog() != true) { return; }
+            Context.SaveAs(saveFileDialog.FileName);
         }
 
         private void CloseCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = true;

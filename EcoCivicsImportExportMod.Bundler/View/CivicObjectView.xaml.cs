@@ -16,22 +16,13 @@ using System.Windows.Shapes;
 namespace EcoCivicsImportExportMod.Bundler.View
 {
     /// <summary>
-    /// Interaction logic for CivicBundleView.xaml
+    /// Interaction logic for CivicObjectView.xaml
     /// </summary>
-    public partial class CivicBundleView : UserControl
+    public partial class CivicObjectView : UserControl
     {
-        public CivicBundleView()
+        public CivicObjectView()
         {
             InitializeComponent();
-        }
-
-        private void TreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-        {
-            var civicBundle = DataContext as ViewModel.CivicBundle;
-            if (civicBundle != null && e.NewValue is ViewModel.CivicObject civicObject)
-            {
-                civicBundle.SelectedCivicObject = civicObject;
-            }
         }
     }
 }

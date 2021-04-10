@@ -5,8 +5,10 @@ using System.Linq;
 namespace EcoCivicsImportExportMod.Bundler
 {
     using Model;
+    using System.Windows;
 
-    public delegate void CivicBundleMutator(CivicBundle civicBundle);
+    public delegate CivicBundle CivicBundleMutator(CivicBundle oldCivicBundle);
+    public delegate void BundledCivicMutator(in BundledCivic bundledCivic);
 
     public class Context
     {
@@ -80,12 +82,121 @@ namespace EcoCivicsImportExportMod.Bundler
         {
             if (civicBundle == null) { return; }
             var oldCivicBundle = civicBundle;
-            var newCivicBundle = oldCivicBundle.Clone() as CivicBundle;
-            mutator(newCivicBundle);
-            CivicBundle = civicBundle;
+            var newCivicBundle = mutator(oldCivicBundle);
+            CivicBundle = newCivicBundle;
             undoStack.Push(oldCivicBundle);
             redoStack.Clear();
             ++LastSavePoint;
+        }
+
+        public void MutateBundledCivic(CivicReference civicReference, BundledCivicMutator mutator)
+        {
+            Mutate((oldCivicBundle) =>
+            {
+                var civics = oldCivicBundle.Civics.Select(c => (BundledCivic)c.Clone()).ToArray();
+                for (int i = 0, l = civics.Length; i < l; ++i)
+                {
+                    ref BundledCivic civic = ref civics[i];
+                    if (civic.AsReference == civicReference)
+                    {
+                        mutator(civic);
+                        break;
+                    }
+                    foreach (var inlineObject in civic.InlineObjects)
+                    {
+                        if (inlineObject.AsReference == civicReference)
+                        {
+                            mutator(inlineObject);
+                            break;
+                        }
+                    }
+                }
+                return new CivicBundle(civics);
+            });
+        }
+
+        public void RenameCivic(CivicReference civicReference, string newName)
+        {
+            if (civicBundle == null) { return; }
+            BundledCivic? civicToRename = FindCivic(civicReference);
+            if (civicToRename == null)
+            {
+                MessageBox.Show($"Failed to rename civic - not found in this bundle!", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            CivicReference renamedCivicReference = new CivicReference(civicReference.Type, newName);
+            BundledCivic? existingCivic = FindCivic(renamedCivicReference);
+            if (existingCivic != null)
+            {
+                MessageBox.Show($"Failed to rename civic - another civic by that name already exists in this bundle!", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            int renameCnt = 0, fixupCnt = 0;
+            Mutate((oldCivicBundle) =>
+            {
+                var civics = oldCivicBundle.Civics.Select(c => (BundledCivic)c.Clone()).ToArray();
+                for (int i = 0, l = civics.Length; i < l; ++i)
+                {
+                    ref BundledCivic civic = ref civics[i];
+                    if (civic.AsReference == civicReference)
+                    {
+                        civic.Data["name"] = newName;
+                        ++renameCnt;
+                    }
+                    else
+                    {
+                        civic.VisitInlineObjects((inlineCivicReference, obj) =>
+                        {
+                            if (inlineCivicReference == civicReference)
+                            {
+                                obj["name"] = newName;
+                                ++renameCnt;
+                            }
+                        });
+                    }
+                    civic.VisitReferences((inlineCivicReference, obj) =>
+                    {
+                        if (inlineCivicReference == civicReference)
+                        {
+                            obj["name"] = newName;
+                            ++fixupCnt;
+                        }
+                    });
+                }
+                return new CivicBundle(civics);
+            });
+            if (renameCnt != 1)
+            {
+                MessageBox.Show($"Failed to rename civic - renameCnt was {renameCnt}, expecting 1!", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (fixupCnt > 0)
+            {
+                MessageBox.Show($"Renamed '{civicReference.Name}' to '{newName}' and fixed up {fixupCnt} internal references.", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show($"Renamed '{civicReference.Name}' to '{newName}'.", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private BundledCivic? FindCivic(CivicReference civicReference)
+        {
+            foreach (var civic in civicBundle.Civics)
+            {
+                if (civic.AsReference == civicReference)
+                {
+                    return civic;
+                }
+            }
+            foreach (var civic in civicBundle.AllInlineObjects)
+            {
+                if (civic.AsReference == civicReference)
+                {
+                    return civic;
+                }
+            }
+            return null;
         }
 
         public bool Undo()
@@ -116,7 +227,8 @@ namespace EcoCivicsImportExportMod.Bundler
 
         public void Save()
         {
-            // TODO: This
+            if (string.IsNullOrEmpty(filePath) || civicBundle == null) { return; }
+            System.IO.File.WriteAllText(filePath, civicBundle.SaveToText());
             LastSavePoint = 0;
         }
 

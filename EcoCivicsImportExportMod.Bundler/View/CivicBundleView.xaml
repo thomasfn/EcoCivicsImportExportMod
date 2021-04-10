@@ -4,11 +4,40 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EcoCivicsImportExportMod.Bundler.View"
+             xmlns:viewmodel="clr-namespace:EcoCivicsImportExportMod.Bundler.ViewModel"
+             d:DataContext="{d:DesignInstance Type=viewmodel:CivicBundle}"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <DockPanel>
-        <TreeView DockPanel.Dock="Left">
-            
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TreeView Grid.Column="0" ItemsSource="{Binding RootObjects}" SelectedItemChanged="TreeView_SelectedItemChanged">
+            <TreeView.Resources>
+                <HierarchicalDataTemplate DataType="{x:Type viewmodel:CivicBundle}" ItemsSource="{Binding CivicObjects}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </HierarchicalDataTemplate>
+                <HierarchicalDataTemplate DataType="{x:Type viewmodel:CivicObject}" ItemsSource="{Binding SubObjects}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </HierarchicalDataTemplate>
+            </TreeView.Resources>
         </TreeView>
-    </DockPanel>
+
+        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+
+        <Grid Grid.Column="2">
+            <local:CivicObjectView Grid.Column="0" Grid.Row="0" DataContext="{Binding SelectedCivicObject}" Visibility="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Grid}}, Path=DataContext.ShowObjectDetails}" />
+            <Label Grid.Column="0" Grid.Row="0" Content="Select a civic from the left to inspect it" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ShowUnselectedHint}"></Label>
+        </Grid>
+    </Grid>
 </UserControl>

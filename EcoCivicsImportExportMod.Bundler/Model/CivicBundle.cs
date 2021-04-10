@@ -6,6 +6,8 @@ using Newtonsoft.Json.Linq;
 
 namespace EcoCivicsImportExportMod.Bundler.Model
 {
+    public delegate void NamedObjectVisitor(CivicReference civicReference, JObject obj);
+
     public readonly struct CivicReference : IEquatable<CivicReference>
     {
         public readonly string Type;
@@ -49,14 +51,14 @@ namespace EcoCivicsImportExportMod.Bundler.Model
 
         public IEnumerable<CivicReference> References
         {
-            get => SearchForInlineNamedObjects(Data, true, true)
+            get => FindNamedObjects(Data, true, true)
                 .Select(t => t.Item1)
                 .Distinct();
         }
 
         public IEnumerable<BundledCivic> InlineObjects
         {
-            get => SearchForInlineNamedObjects(Data, false, true)
+            get => FindNamedObjects(Data, false, true)
                 .Select(t => new BundledCivic(t.Item2));
         }
 
@@ -65,7 +67,20 @@ namespace EcoCivicsImportExportMod.Bundler.Model
             Data = data;
         }
 
-        private static IEnumerable<(CivicReference, JObject)> SearchForInlineNamedObjects(JToken target, bool? references = null, bool ignoreRoot = false)
+        public void VisitInlineObjects(NamedObjectVisitor visitor)
+            => VisitNamedObjects(visitor, Data, false, true);
+
+        public void VisitReferences(NamedObjectVisitor visitor)
+            => VisitNamedObjects(visitor, Data, true, true);
+
+        private static IEnumerable<(CivicReference CivicReference, JObject obj)> FindNamedObjects(JToken target, bool? references = null, bool ignoreRoot = false)
+        {
+            var result = new List<(CivicReference CivicReference, JObject Obj)>();
+            VisitNamedObjects((civicReference, obj) => result.Add((civicReference, obj)), target, references, ignoreRoot);
+            return result;
+        }
+
+        private static void VisitNamedObjects(NamedObjectVisitor visitor, JToken target, bool? references = null, bool ignoreRoot = false)
         {
             if (target is JObject obj)
             {
@@ -76,26 +91,20 @@ namespace EcoCivicsImportExportMod.Bundler.Model
                 {
                     if (references == null || references.Value == isRef)
                     {
-                        yield return (new CivicReference(typeName, name), obj);
+                        visitor(new CivicReference(typeName, name), obj);
                     }
-                    yield break;
+                    return;
                 }
                 foreach (var pair in obj)
                 {
-                    foreach (var referenceTuple in SearchForInlineNamedObjects(pair.Value, references))
-                    {
-                        yield return referenceTuple;
-                    }
+                    VisitNamedObjects(visitor, pair.Value, references);
                 }
             }
             else if (target is JArray arr)
             {
                 foreach (var element in arr)
                 {
-                    foreach (var referenceTuple in SearchForInlineNamedObjects(element, references))
-                    {
-                        yield return referenceTuple;
-                    }
+                    VisitNamedObjects(visitor, element, references);
                 }
             }
         }
@@ -122,7 +131,7 @@ namespace EcoCivicsImportExportMod.Bundler.Model
             {
                 throw new InvalidOperationException($"Civic format not supported (found major '{verMaj}', expecting '{MajorVersion}'");
             }
-            if (typeName == typeof(CivicBundle).FullName)
+            if (typeName == "Eco.Mods.CivicsImpExp.CivicBundle")
             {
                 // Importing formal bundle with multiple civics
                 var civics = jsonObj.Value<JArray>("civics");
@@ -164,5 +173,19 @@ namespace EcoCivicsImportExportMod.Bundler.Model
 
         public object Clone()
             => new CivicBundle(Civics.Select(c => (BundledCivic)c.Clone()));
+
+        public string SaveToText()
+        {
+            JObject jsonObj = new JObject();
+            jsonObj.Add("type", "Eco.Mods.CivicsImpExp.CivicBundle");
+            jsonObj.Add("version", new JArray(MajorVersion, MinorVersion));
+            JArray civicsArr = new JArray();
+            jsonObj.Add("civics", civicsArr);
+            foreach (var civic in Civics)
+            {
+                civicsArr.Add(civic.Data);
+            }
+            return jsonObj.ToString();
+        }
     }
 }

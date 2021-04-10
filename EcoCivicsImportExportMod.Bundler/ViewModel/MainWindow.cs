@@ -68,13 +68,9 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
             {
                 CivicBundle = null;
             }
-            else if (civicBundle != null)
+            else if (CivicBundle == null)
             {
-                civicBundle.UnderlyingCivicBundle = Context.CivicBundle;
-            }
-            else
-            {
-                CivicBundle = new CivicBundle(Context.CivicBundle);
+                CivicBundle = new CivicBundle(Context);
             }
         }
 
