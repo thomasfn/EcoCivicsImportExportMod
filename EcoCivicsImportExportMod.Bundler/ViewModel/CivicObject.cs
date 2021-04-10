@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace EcoCivicsImportExportMod.Bundler.ViewModel
 {
@@ -28,7 +30,10 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
                 bundledCivic = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BundledCivic)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RawJson)));
                 UpdateSubobjects();
+                UpdateReferences();
+                
             }
         }
 
@@ -41,7 +46,16 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
             }
         }
 
+        public string RawJson
+        {
+            get => BundledCivic.Data.ToString();
+        }
+
         public ObservableCollection<CivicObject> SubObjects { get; } = new ObservableCollection<CivicObject>();
+
+        public ObservableCollection<CivicReference> InternalReferences { get; } = new ObservableCollection<CivicReference>();
+
+        public ObservableCollection<CivicReference> ExternalReferences { get; } = new ObservableCollection<CivicReference>();
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -50,6 +64,7 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
             this.bundle = bundle;
             this.bundledCivic = bundledCivic;
             UpdateSubobjects();
+            UpdateReferences();
         }
 
         private void UpdateSubobjects()
@@ -74,6 +89,22 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
             {
                 SubObjects.RemoveAt(i);
             }
+        }
+
+        private void UpdateReferences()
+        {
+            InternalReferences.SetFromEnumerable(
+                bundledCivic.References
+                    .Where(r => bundle.UnderlyingCivicBundle.ReferenceIsLocal(r)),
+                (in Model.CivicReference civicReference) => new CivicReference(civicReference),
+                (CivicReference viewModel, in Model.CivicReference civicReference) => viewModel.UnderlyingCivicReference = civicReference
+            );
+            ExternalReferences.SetFromEnumerable(
+                bundledCivic.References
+                    .Where(r => !bundle.UnderlyingCivicBundle.ReferenceIsLocal(r)),
+                (in Model.CivicReference civicReference) => new CivicReference(civicReference),
+                (CivicReference viewModel, in Model.CivicReference civicReference) => viewModel.UnderlyingCivicReference = civicReference
+            );
         }
     }
 }

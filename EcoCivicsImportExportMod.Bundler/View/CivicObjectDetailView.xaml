@@ -24,6 +24,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Border Grid.Column="0" Grid.Row="0">
             <TextBlock Text="Type: "  />
@@ -48,6 +50,42 @@
                     CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType={x:Type TextBox}}}" />
                 </TextBox.InputBindings>
             </TextBox>
+        </Border>
+        <Border Grid.Column="0" Grid.Row="2">
+            <TextBlock Text="Internal References: "  />
+        </Border>
+        <Border Grid.Column="1" Grid.Row="2">
+            <ListBox ItemsSource="{Binding InternalReferences}" HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&quot;" />
+                            <TextBlock Text="{Binding Name}" />
+                            <TextBlock Text="&quot; (" />
+                            <TextBlock Text="{Binding FullType}" />
+                            <TextBlock Text=")" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+        <Border Grid.Column="0" Grid.Row="3">
+            <TextBlock Text="External References: "  />
+        </Border>
+        <Border Grid.Column="1" Grid.Row="3">
+            <ListBox ItemsSource="{Binding ExternalReferences}" HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&quot;" />
+                            <TextBlock Text="{Binding Name}" />
+                            <TextBlock Text="&quot; (" />
+                            <TextBlock Text="{Binding FullType}" />
+                            <TextBlock Text=")" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </Border>
     </Grid>
 </UserControl>

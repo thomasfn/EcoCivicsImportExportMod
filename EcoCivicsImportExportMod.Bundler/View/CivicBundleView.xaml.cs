@@ -32,6 +32,10 @@ namespace EcoCivicsImportExportMod.Bundler.View
             {
                 civicBundle.SelectedCivicObject = civicObject;
             }
+            else
+            {
+                civicBundle.SelectedCivicObject = null;
+            }
         }
     }
 }

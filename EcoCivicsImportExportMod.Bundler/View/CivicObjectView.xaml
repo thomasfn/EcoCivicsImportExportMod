@@ -13,6 +13,9 @@
             <TabItem Header="Details">
                 <local:CivicObjectDetailView DataContext="{Binding .}" />
             </TabItem>
+            <TabItem Header="Json">
+                <TextBox Text="{Binding Mode=OneWay, Path=RawJson}" IsReadOnly="True" />
+            </TabItem>
         </TabControl>
     </Grid>
 </UserControl>
