@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:app="clr-namespace:EcoCivicsImportExportMod.Bundler"
         xmlns:local="clr-namespace:EcoCivicsImportExportMod.Bundler.View"
         xmlns:viewmodel="clr-namespace:EcoCivicsImportExportMod.Bundler.ViewModel"
         d:DataContext="{d:DesignInstance Type=viewmodel:MainWindow}"
@@ -16,6 +17,7 @@
         <CommandBinding Command="ApplicationCommands.Close" Executed="CloseCommand_Executed" CanExecute="CloseCommand_CanExecute" />
         <CommandBinding Command="ApplicationCommands.Undo" Executed="UndoCommand_Executed" CanExecute="UndoCommand_CanExecute" />
         <CommandBinding Command="ApplicationCommands.Redo" Executed="RedoCommand_Executed" CanExecute="RedoCommand_CanExecute" />
+        <CommandBinding Command="app:BundlerCommands.RemoveFromBundle" Executed="RemoveFromBundleCommand_Executed" CanExecute="RemoveFromBundleCommand_CanExecute" />
     </Window.CommandBindings>
     <DockPanel>
         <Menu DockPanel.Dock="Top" x:Name="menu">
@@ -30,6 +32,8 @@
             <MenuItem Header="_Edit">
                 <MenuItem Header="_Undo" Command="ApplicationCommands.Undo" />
                 <MenuItem Header="_Redo" Command="ApplicationCommands.Redo" />
+                <Separator />
+                <MenuItem Header="_Remove Selected from Bundle" Command="app:BundlerCommands.RemoveFromBundle" />
             </MenuItem>
         </Menu>
         <Grid>

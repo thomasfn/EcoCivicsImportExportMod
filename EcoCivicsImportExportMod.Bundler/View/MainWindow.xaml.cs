@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Linq;
 
 using Microsoft.Win32;
 
@@ -94,16 +95,41 @@ namespace EcoCivicsImportExportMod.Bundler.View
 
         private void UndoCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            e.Handled = Context.Undo();
+            Context.Undo();
         }
 
         private void RedoCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = Context.CanRedo;
 
         private void RedoCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            e.Handled = Context.Redo();
+            Context.Redo();
+        }
+
+        private void RemoveFromBundleCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            var civicObject = (e.Parameter as ViewModel.CivicObject) ?? (DataContext as ViewModel.MainWindow).CivicBundle?.SelectedCivicObject ?? null;
+            if (civicObject == null)
+            {
+                e.CanExecute = false;
+                return;
+            }
+            if (!Context.CivicBundle.Civics.Any(c => c.AsReference == civicObject.BundledCivic.AsReference))
+            {
+                e.CanExecute = false;
+                return;
+            }
+            e.CanExecute = true;
+        }
+
+        private void RemoveFromBundleCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            var civicObject = (e.Parameter as ViewModel.CivicObject) ?? (DataContext as ViewModel.MainWindow).CivicBundle?.SelectedCivicObject ?? null;
+            if (civicObject == null) { return; }
+            Context.RemoveCivic(civicObject.BundledCivic.AsReference);
         }
 
         #endregion
+
+
     }
 }

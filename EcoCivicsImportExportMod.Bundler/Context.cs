@@ -180,6 +180,18 @@ namespace EcoCivicsImportExportMod.Bundler
             }
         }
 
+        public void RemoveCivic(CivicReference civicReference)
+        {
+            // TODO: Add support for removing inline objects (e.g. a district from a district map)
+            Mutate(civicBundle =>
+                new CivicBundle(
+                    civicBundle.Civics
+                        .Except(civicBundle.Civics.Where(c => c.AsReference == civicReference))
+                        .Select(c => (BundledCivic)c.Clone())
+                )
+            );
+        }
+
         private BundledCivic? FindCivic(CivicReference civicReference)
         {
             foreach (var civic in civicBundle.Civics)

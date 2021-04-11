@@ -9,6 +9,7 @@
   <ItemGroup>
     <None Remove="Icons\auction-hammer.png" />
     <None Remove="Icons\clipboard-list.png" />
+    <None Remove="Icons\cross.png" />
     <None Remove="Icons\globe.png" />
     <None Remove="Icons\map.png" />
     <None Remove="Icons\money-bag.png" />
@@ -29,6 +30,7 @@
   <ItemGroup>
     <Resource Include="Icons\auction-hammer.png" />
     <Resource Include="Icons\clipboard-list.png" />
+    <Resource Include="Icons\cross.png" />
     <Resource Include="Icons\globe.png" />
     <Resource Include="Icons\map.png" />
     <Resource Include="Icons\money-bag.png" />
