@@ -28,6 +28,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Border Grid.Column="0" Grid.Row="0">
             <TextBlock Text="Type: "  />
@@ -65,30 +67,12 @@
                 </TextBox.InputBindings>
             </TextBox>
         </Border>
-        <Border Grid.Column="0" Grid.Row="3">
+        <Separator Grid.Row="3" Grid.ColumnSpan="2" />
+        <Border Grid.Column="0" Grid.Row="4">
             <TextBlock Text="Internal References: "  />
         </Border>
-        <Border Grid.Column="1" Grid.Row="3">
-            <ListBox ItemsSource="{Binding InternalReferences}" HorizontalContentAlignment="Stretch">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <Image Source="{Binding IconSource}" />
-                            <TextBlock Text="&quot;" />
-                            <TextBlock Text="{Binding Name}" />
-                            <TextBlock Text="&quot; (" />
-                            <TextBlock Text="{Binding FullType}" />
-                            <TextBlock Text=")" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </Border>
-        <Border Grid.Column="0" Grid.Row="4">
-            <TextBlock Text="External References: "  />
-        </Border>
         <Border Grid.Column="1" Grid.Row="4">
-            <ListBox ItemsSource="{Binding ExternalReferences}" HorizontalContentAlignment="Stretch">
+            <ListBox ItemsSource="{Binding InternalReferences}" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -108,6 +92,26 @@
         </Border>
         <Border Grid.Column="1" Grid.Row="5">
             <ListBox ItemsSource="{Binding InternalDependants}" HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding IconSource}" />
+                            <TextBlock Text="&quot;" />
+                            <TextBlock Text="{Binding Name}" />
+                            <TextBlock Text="&quot; (" />
+                            <TextBlock Text="{Binding FullType}" />
+                            <TextBlock Text=")" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+        <Separator Grid.Row="6" Grid.ColumnSpan="2" />
+        <Border Grid.Column="0" Grid.Row="7">
+            <TextBlock Text="External References: "  />
+        </Border>
+        <Border Grid.Column="1" Grid.Row="7">
+            <ListBox ItemsSource="{Binding ExternalReferences}" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">

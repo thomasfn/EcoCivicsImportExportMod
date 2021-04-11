@@ -112,24 +112,29 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
             }
         }
 
+        private IEnumerable<Model.CivicReference> SortCivicReferences(IEnumerable<Model.CivicReference> civicReferences)
+        {
+            return civicReferences
+                .GroupBy(c => c.Type)
+                .OrderBy(g => CivicBundle.PreferredSortOrderForType.TryGetValue(g.Key, out int sortOrder) ? sortOrder : int.MaxValue)
+                .Select(g => g.OrderBy(c => c.Name))
+                .SelectMany(g => g);
+        }
+
         private void UpdateReferences()
         {
             InternalReferences.SetFromEnumerable(
-                bundledCivic.References
-                    .Where(r => bundle.UnderlyingCivicBundle.ReferenceIsLocal(r)),
+                SortCivicReferences(bundledCivic.References.Where(r => bundle.UnderlyingCivicBundle.ReferenceIsLocal(r))),
                 (in Model.CivicReference civicReference) => new CivicReference(civicReference),
                 (CivicReference viewModel, in Model.CivicReference civicReference) => viewModel.UnderlyingCivicReference = civicReference
             );
             ExternalReferences.SetFromEnumerable(
-                bundledCivic.References
-                    .Where(r => !bundle.UnderlyingCivicBundle.ReferenceIsLocal(r)),
+                SortCivicReferences(bundledCivic.References.Where(r => !bundle.UnderlyingCivicBundle.ReferenceIsLocal(r))),
                 (in Model.CivicReference civicReference) => new CivicReference(civicReference),
                 (CivicReference viewModel, in Model.CivicReference civicReference) => viewModel.UnderlyingCivicReference = civicReference
             );
             InternalDependants.SetFromEnumerable(
-                bundle.UnderlyingCivicBundle.Civics
-                    .Where(c => c.References.Contains(bundledCivic.AsReference))
-                    .Select(c => c.AsReference),
+                SortCivicReferences(bundle.UnderlyingCivicBundle.Civics.Where(c => c.References.Contains(bundledCivic.AsReference)).Select(c => c.AsReference)),
                 (in Model.CivicReference civicReference) => new CivicReference(civicReference),
                 (CivicReference viewModel, in Model.CivicReference civicReference) => viewModel.UnderlyingCivicReference = civicReference
             );

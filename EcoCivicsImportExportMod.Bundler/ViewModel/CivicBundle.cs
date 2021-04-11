@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -9,6 +10,18 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
 {
     public class CivicBundle : INotifyPropertyChanged
     {
+        public static readonly IReadOnlyDictionary<string, int> PreferredSortOrderForType = new Dictionary<string, int>
+        {
+            { EcoTypes.Constitution, 0 },
+            { EcoTypes.ConstitutionalAmendment, 1 },
+            { EcoTypes.ElectionProcess, 2 },
+            { EcoTypes.Demographic, 3 },
+            { EcoTypes.DistrictMap, 4 },
+            { EcoTypes.ElectedTitle, 5 },
+            { EcoTypes.AppointedTitle, 6 },
+            { EcoTypes.Law, 7 }
+        };
+
         private CivicObject selectedCivicObject;
         private bool incomingDrop;
 
@@ -83,6 +96,15 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
         }
 
+        private IEnumerable<Model.BundledCivic> SortCivics(IEnumerable<Model.BundledCivic> bundledCivics)
+        {
+            return bundledCivics
+                .GroupBy(c => c.Type)
+                .OrderBy(g => PreferredSortOrderForType.TryGetValue(g.Key, out int sortOrder) ? sortOrder : int.MaxValue)
+                .Select(g => g.OrderBy(c => c.Name))
+                .SelectMany(g => g);
+        }
+
         private void UpdateCivicObjects()
         {
             if (UnderlyingCivicBundle == null)
@@ -90,28 +112,11 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
                 CivicObjects.Clear();
                 return;
             }
-            var civics = UnderlyingCivicBundle.Civics
-                .OrderBy(c => c.Name);
-            int i = 0;
-            foreach (var civic in civics)
-            {
-                CivicObject civicObject;
-                if (i >= CivicObjects.Count)
-                {
-                    civicObject = new CivicObject(this, civic);
-                    CivicObjects.Add(civicObject);
-                }
-                else
-                {
-                    civicObject = CivicObjects[i];
-                    civicObject.BundledCivic = civic;
-                }
-                ++i;
-            }
-            while (i < CivicObjects.Count)
-            {
-                CivicObjects.RemoveAt(i);
-            }
+            CivicObjects.SetFromEnumerable(
+                SortCivics(UnderlyingCivicBundle.Civics),
+                (in Model.BundledCivic bundledCivic) => new CivicObject(this, bundledCivic),
+                (CivicObject viewModel, in Model.BundledCivic bundledCivic) => viewModel.BundledCivic = bundledCivic
+            );
         }
     }
 }
