@@ -57,14 +57,54 @@ The civic object will be given draft status with the command executor as the own
 
 The civic object may have dependencies on other objects - for example, a law may reference a bank account or a district map, or an election process may reference a demographic. All dependencies must be present at the point of running the import command, or the command will fail. Dependencies are resolved via name - so if a law references a district called "Main Roads" and the server has a district called "Roads" instead, this will not work - either the district will need to be renamed for the dependency to be resolved, or the json file will need to be manually amended. Dependencies can be safely renamed after the import is complete.
 
-## Building from Source
+An import can be reversed by using the undo import command.
+
+`/civics undoimport`
+
+This will roll back the previously executed import, deleting any objects that it created. This will not go back more than one import, and it will not roll back imports from previous sessions (e.g. since a server restart). Use this command with caution as it wipes the objects entirely from memory without any regard for how they may have changed or been referenced since being imported.
+
+### Importing Bundles
+A bundle is a number of civics that have been previously exported by the plugin, grouped up into a single file. This bundle can be imported via the same import command as single civics. When importing a bundle, all civics contained within the bundle are imported in one go, saving the need to run the command over and over again during workloads that involve importing a large number of civics (for example an entire government structure). Bundles can be assembled manually or using the included bundler tool (see [Bundler Tool](#bundler-tool)).
+
+`/civics import <filename-or-url>`
+e.g. `/civics import my-bundle.json`
+
+A bundle can only be imported if all dependencies of that bundle are present beforehand. The plugin will not import _any_ civics from the bundle if some references can't be resolved. The bundle info command will print details about the bundle, including any dependencies and whether or not they could be resolved, without actually attempting an import - e.g. it is safe to run with no side effects.
+
+`/civics bundleinfo <filename-or-url>`
+e.g. `/civics bundleinfo my-bundle.json`
+
+The bundle info command will work on single civics too, as they are just considered a bundle with one civic contained within.
+
+### Bundler Tool
+The bundler tool allows civics that have been previously exported by the plugin to be grouped together into a single bundle, ready to be imported by the plugin in one go. It has a simple UI and only works on Windows.
+
+#### Installation
+1. Download the tool from the latest release
+2. Extract the zip to a location of your choosing
+3. Run the executable `EcoCivicsImportExportMod.Bundler.exe`
+
+#### Usage
+When you first open the tool, you'll be presented with a clean slate.
+![Bundler Clean Slate](./screenshots/bundler-fresh.png "Bundler Clean Slate")
+As the tip suggests, there are multiple ways you can get started. You can open an existing bundle or create a new one via the File menu, or drag one or more civic json files onto the tool from Windows Explorer. If you choose to create a new bundle, you'll be presented with an empty untitled bundle.
+![Bundler New Bundle](./screenshots/bundler-new.png "Bundler New Bundle")
+In this view you can drag one or more civic json files onto the tool from Windows Explorer, or select Add to Bundle from the Edit menu to add civics to the bundle.
+![Bundler Imported Civics](./screenshots/bundler-imported.png "Bundler Imported Civics")
+As you add civics to the bundle, they will display on the tree view to the left, by order of type and then name. The icons can be used to tell the civic types apart at a glance. Some civics hold sub-objects, for example a District Map may hold multiple Districts, and these can be seen by expanding the civic object node in the tree view. You can right click civics and click Remove from Bundle, or select them and click Remove Selected from Bundle in the Edit menu to remove a civic from the bundle. You can select any civic object node from the tree view to view further details.
+![Bundler Object Detail View](./screenshots/bundler-detailview.png "Object Detail View")
+The detail view displays key information about the civic, including any references it has to other civics (either 'Internal', that is within the bundle, or 'External', that is outside of the bundle) and any other civics within the bundle that reference the civic ('Dependants'). The name and description of the civic objects can be changed here, but all other properties are immutable.
+
+Once the bundle has been assembled to your satisfaction, simply save it to the server's `civics` folder and the plugin's import command should be able to import it.
+
+## Building Mod from Source
 
 ### Windows
 
 1. Login to the [Eco Website](https://play.eco/) and download the latest modkit
 2. Extract the modkit and copy the dlls from `ReferenceAssemblies` to `eco-dlls` in the root directory (create the folder if it doesn't exist)
 3. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019
-4. Build the project in Visual Studio
+4. Build the `EcoCivicsImportExportMod` project in Visual Studio
 5. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\netcoreapp3.1`
 
 ### Linux
@@ -74,6 +114,14 @@ The civic object may have dependencies on other objects - for example, a law may
 `dotnet restore`
 `dotnet build`
 3. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/netcoreapp3.1`
+
+## Building Bundler Tool from Source
+
+### Windows
+
+1. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019
+2. Build the `EcoCivicsImportExportMod.Bundler` project in Visual Studio
+3. Find the artifact in `EcoCivicsImportExportMod.Bundler\bin\{Debug|Release}\net5.0-windows`
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
