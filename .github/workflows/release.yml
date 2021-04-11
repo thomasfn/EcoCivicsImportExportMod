@@ -8,6 +8,8 @@ jobs:
   build:
     name: Build Mod
     runs-on: ubuntu-latest
+    env:
+      MODKIT_VERSION: 0.9.2.4-beta
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core 3.1
@@ -18,7 +20,14 @@ jobs:
       run: dotnet restore
       env:
         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
+    - name: Cache Eco dlls
+      id: cache-eco-dlls
+      uses: actions/cache@v2
+      with:
+        path: ./eco-dlls
+        key: ${{ env.MODKIT_VERSION }}-dlls
     - name: Extract Eco dlls
+      if: steps.cache-eco-dlls.outputs.cache-hit != 'true'
       run: sh fetch-eco-reference-assemblies.sh
     - name: Build
       run: dotnet build --configuration Release --no-restore
