@@ -19,30 +19,41 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TreeView Grid.Column="0" ItemsSource="{Binding RootObjects}" SelectedItemChanged="TreeView_SelectedItemChanged">
-            <TreeView.Resources>
-                <HierarchicalDataTemplate DataType="{x:Type viewmodel:CivicBundle}" ItemsSource="{Binding CivicObjects}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding Name}" />
-                    </StackPanel>
-                </HierarchicalDataTemplate>
-                <HierarchicalDataTemplate DataType="{x:Type viewmodel:CivicObject}" ItemsSource="{Binding SubObjects}">
-                    <StackPanel Orientation="Horizontal">
-                        <Image Source="{Binding IconSource}" />
-                        <TextBlock Text="{Binding Name}" />
-                        <StackPanel.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Command="app:BundlerCommands.RemoveFromBundle" CommandParameter="{Binding .}">
-                                    <MenuItem.Icon>
-                                        <Image Source="/EcoCivicsImportExportMod.Bundler;component/Icons/cross.png" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                            </ContextMenu>
-                        </StackPanel.ContextMenu>
-                    </StackPanel>
-                </HierarchicalDataTemplate>
-            </TreeView.Resources>
-        </TreeView>
+        <Border Grid.Column="0" BorderThickness="{Binding TreeViewBorderSize}" BorderBrush="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}">
+            <TreeView ItemsSource="{Binding RootObjects}" SelectedItemChanged="TreeView_SelectedItemChanged" AllowDrop="True" Drop="TreeView_Drop" DragDrop.DragEnter="TreeView_DragEnter" DragDrop.DragLeave="TreeView_DragLeave">
+                <TreeView.Resources>
+                    <HierarchicalDataTemplate DataType="{x:Type viewmodel:CivicBundle}" ItemsSource="{Binding CivicObjects}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Name}" />
+                            <StackPanel.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Command="app:BundlerCommands.AddToBundle">
+                                        <MenuItem.Icon>
+                                            <Image Source="/EcoCivicsImportExportMod.Bundler;component/Icons/plus.png" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </StackPanel.ContextMenu>
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                    <HierarchicalDataTemplate DataType="{x:Type viewmodel:CivicObject}" ItemsSource="{Binding SubObjects}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding IconSource}" />
+                            <TextBlock Text="{Binding Name}" />
+                            <StackPanel.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Command="app:BundlerCommands.RemoveFromBundle" CommandParameter="{Binding .}">
+                                        <MenuItem.Icon>
+                                            <Image Source="/EcoCivicsImportExportMod.Bundler;component/Icons/cross.png" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </StackPanel.ContextMenu>
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                </TreeView.Resources>
+            </TreeView>
+        </Border>
 
         <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
 

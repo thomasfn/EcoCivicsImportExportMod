@@ -37,5 +37,42 @@ namespace EcoCivicsImportExportMod.Bundler.View
                 civicBundle.SelectedCivicObject = null;
             }
         }
+
+        private void TreeView_Drop(object sender, DragEventArgs e)
+        {
+            var bundle = DataContext as ViewModel.CivicBundle;
+            if (bundle == null) { return; }
+            bundle.IncomingDrop = false;
+            var data = e.Data as DataObject;
+            if (data == null) { return; }
+            if (!data.ContainsFileDropList()) { return; }
+            var fileDropList = data.GetFileDropList();
+            string[] arr = new string[fileDropList.Count];
+            fileDropList.CopyTo(arr, 0);
+            if (BundlerCommands.AddToBundle.CanExecute(arr, this))
+            {
+                BundlerCommands.AddToBundle.Execute(arr, this);
+            }
+        }
+
+        private void TreeView_DragEnter(object sender, DragEventArgs e)
+        {
+            var bundle = DataContext as ViewModel.CivicBundle;
+            var data = e.Data as DataObject;
+            if (bundle == null || data == null) { return; }
+            if (!data.ContainsFileDropList()) { return; }
+            var fileDropList = data.GetFileDropList();
+            string[] arr = new string[fileDropList.Count];
+            fileDropList.CopyTo(arr, 0);
+            if (!BundlerCommands.AddToBundle.CanExecute(arr, this)) { return; }
+            bundle.IncomingDrop = true;
+        }
+
+        private void TreeView_DragLeave(object sender, DragEventArgs e)
+        {
+            var bundle = DataContext as ViewModel.CivicBundle;
+            if (bundle == null) { return; }
+            bundle.IncomingDrop = false;
+        }
     }
 }

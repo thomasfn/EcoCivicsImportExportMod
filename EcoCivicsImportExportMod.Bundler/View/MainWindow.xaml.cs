@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Linq;
 
 using Microsoft.Win32;
+using System.Collections.Generic;
 
 namespace EcoCivicsImportExportMod.Bundler.View
 {
@@ -46,7 +47,14 @@ namespace EcoCivicsImportExportMod.Bundler.View
         private void NewCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             if (!CheckUnsavedChanges()) { return; }
-            Context.New();
+            if (e.Parameter is IEnumerable<string> newWith)
+            {
+                Context.NewWith(newWith);
+            }
+            else
+            {
+                Context.New();
+            }
         }
 
         private void OpenCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = true;
@@ -105,6 +113,32 @@ namespace EcoCivicsImportExportMod.Bundler.View
             Context.Redo();
         }
 
+        private void AddToBundleCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = Context.CivicBundle != null;
+
+        private void AddToBundleCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            IEnumerable<string> filePaths;
+            if (e.Parameter is string str)
+            {
+                filePaths = new string[] { str };
+            }
+            else if (e.Parameter is IEnumerable<string> paramFilePaths)
+            {
+                filePaths = paramFilePaths;
+            }
+            else
+            {
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Title = "Add Civic to Bundle";
+                openFileDialog.Filter = "Json files (*.json)|*.json";
+                openFileDialog.CheckFileExists = true;
+                openFileDialog.Multiselect = true;
+                if (openFileDialog.ShowDialog() != true) { return; }
+                filePaths = openFileDialog.FileNames;
+            }
+            Context.AddCivics(filePaths);
+        }
+
         private void RemoveFromBundleCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
             var civicObject = (e.Parameter as ViewModel.CivicObject) ?? (DataContext as ViewModel.MainWindow).CivicBundle?.SelectedCivicObject ?? null;
@@ -130,6 +164,42 @@ namespace EcoCivicsImportExportMod.Bundler.View
 
         #endregion
 
+        private void Label_Drop(object sender, DragEventArgs e)
+        {
+            var mainWindow = DataContext as ViewModel.MainWindow;
+            if (mainWindow == null) { return; }
+            mainWindow.IncomingDrop = false;
+            var data = e.Data as DataObject;
+            if (data == null) { return; }
+            if (!data.ContainsFileDropList()) { return; }
+            var fileDropList = data.GetFileDropList();
+            string[] arr = new string[fileDropList.Count];
+            fileDropList.CopyTo(arr, 0);
+            if (ApplicationCommands.New.CanExecute(arr, this))
+            {
+                ApplicationCommands.New.Execute(arr, this);
+            }
+        }
+
+        private void Label_DragEnter(object sender, DragEventArgs e)
+        {
+            var mainWindow = DataContext as ViewModel.MainWindow;
+            var data = e.Data as DataObject;
+            if (mainWindow == null || data == null) { return; }
+            if (!data.ContainsFileDropList()) { return; }
+            var fileDropList = data.GetFileDropList();
+            string[] arr = new string[fileDropList.Count];
+            fileDropList.CopyTo(arr, 0);
+            if (!ApplicationCommands.New.CanExecute(arr, this)) { return; }
+            mainWindow.IncomingDrop = true;
+        }
+
+        private void Label_DragLeave(object sender, DragEventArgs e)
+        {
+            var mainWindow = DataContext as ViewModel.MainWindow;
+            if (mainWindow == null) { return; }
+            mainWindow.IncomingDrop = false;
+        }
 
     }
 }

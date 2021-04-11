@@ -17,6 +17,7 @@
     <None Remove="Icons\paper-bag--plus.png" />
     <None Remove="Icons\paper-bag.png" />
     <None Remove="Icons\piggy-bank.png" />
+    <None Remove="Icons\plus.png" />
     <None Remove="Icons\question.png" />
     <None Remove="Icons\user-business-boss.png" />
     <None Remove="Icons\user-silhouette.png" />
@@ -38,6 +39,7 @@
     <Resource Include="Icons\paper-bag--plus.png" />
     <Resource Include="Icons\paper-bag.png" />
     <Resource Include="Icons\piggy-bank.png" />
+    <Resource Include="Icons\plus.png" />
     <Resource Include="Icons\question.png" />
     <Resource Include="Icons\user-business-boss.png" />
     <Resource Include="Icons\user-silhouette.png" />

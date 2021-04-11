@@ -17,6 +17,7 @@
         <CommandBinding Command="ApplicationCommands.Close" Executed="CloseCommand_Executed" CanExecute="CloseCommand_CanExecute" />
         <CommandBinding Command="ApplicationCommands.Undo" Executed="UndoCommand_Executed" CanExecute="UndoCommand_CanExecute" />
         <CommandBinding Command="ApplicationCommands.Redo" Executed="RedoCommand_Executed" CanExecute="RedoCommand_CanExecute" />
+        <CommandBinding Command="app:BundlerCommands.AddToBundle" Executed="AddToBundleCommand_Executed" CanExecute="AddToBundleCommand_CanExecute" />
         <CommandBinding Command="app:BundlerCommands.RemoveFromBundle" Executed="RemoveFromBundleCommand_Executed" CanExecute="RemoveFromBundleCommand_CanExecute" />
     </Window.CommandBindings>
     <DockPanel>
@@ -33,12 +34,28 @@
                 <MenuItem Header="_Undo" Command="ApplicationCommands.Undo" />
                 <MenuItem Header="_Redo" Command="ApplicationCommands.Redo" />
                 <Separator />
-                <MenuItem Header="_Remove Selected from Bundle" Command="app:BundlerCommands.RemoveFromBundle" />
+                <MenuItem Header="_Add to Bundle" Command="app:BundlerCommands.AddToBundle">
+                    <MenuItem.Icon>
+                        <Image Source="/EcoCivicsImportExportMod.Bundler;component/Icons/plus.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Remove Selected from Bundle" Command="app:BundlerCommands.RemoveFromBundle">
+                    <MenuItem.Icon>
+                        <Image Source="/EcoCivicsImportExportMod.Bundler;component/Icons/cross.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
         </Menu>
         <Grid>
             <local:CivicBundleView Grid.Column="0" Grid.Row="0" DataContext="{Binding CivicBundle}" Visibility="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.ShowLoadedView}" />
-            <Label Grid.Column="0" Grid.Row="0" Content="Drag a bundle or civic file onto me to begin!" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ShowUnloadedHint}"></Label>
+            <Border Grid.Column="0" Grid.Row="0" BorderThickness="{Binding DragTargetBorderSize}" BorderBrush="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}">
+                <Label
+                    Content="Drag a bundle or civic file onto me to begin!"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Visibility="{Binding ShowUnloadedHint}"
+                    AllowDrop="True" Drop="Label_Drop" DragDrop.DragEnter="Label_DragEnter" DragDrop.DragLeave="Label_DragLeave"
+                />
+            </Border>
+            
         </Grid>
     </DockPanel>
 </Window>

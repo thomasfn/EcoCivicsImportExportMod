@@ -3,12 +3,14 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace EcoCivicsImportExportMod.Bundler.ViewModel
 {
     public class CivicBundle : INotifyPropertyChanged
     {
         private CivicObject selectedCivicObject;
+        private bool incomingDrop;
 
         public Context Context { get; }
 
@@ -41,6 +43,23 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
         public Visibility ShowObjectDetails
         {
             get => SelectedCivicObject == null ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public bool IncomingDrop
+        {
+            get => incomingDrop;
+            set
+            {
+                if (value == incomingDrop) { return; }
+                incomingDrop = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IncomingDrop)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TreeViewBorderSize)));
+            }
+        }
+
+        public Thickness TreeViewBorderSize
+        {
+            get => incomingDrop ? new Thickness(3, 3, 3, 3) : new Thickness(0, 0, 0, 0);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

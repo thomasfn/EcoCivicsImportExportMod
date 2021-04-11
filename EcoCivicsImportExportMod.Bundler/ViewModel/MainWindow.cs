@@ -6,6 +6,8 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
 {
     public class MainWindow : INotifyPropertyChanged
     {
+        private bool incomingDrop;
+
         public Context Context { get; }
 
         public Visibility ShowUnloadedHint { get => Context.CivicBundle != null ? Visibility.Collapsed : Visibility.Visible; }
@@ -46,6 +48,23 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
                 civicBundle = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CivicBundle)));
             }
+        }
+
+        public bool IncomingDrop
+        {
+            get => incomingDrop;
+            set
+            {
+                if (value == incomingDrop) { return; }
+                incomingDrop = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IncomingDrop)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DragTargetBorderSize)));
+            }
+        }
+
+        public Thickness DragTargetBorderSize
+        {
+            get => incomingDrop ? new Thickness(3, 3, 3, 3) : new Thickness(0, 0, 0, 0);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 namespace EcoCivicsImportExportMod.Bundler
 {
@@ -69,9 +70,49 @@ namespace EcoCivicsImportExportMod.Bundler
             LastSavePoint = 1;
         }
 
+        public void NewWith(IEnumerable<string> filePaths)
+        {
+            if (filePaths.Count() == 1)
+            {
+                Load(filePaths.Single());
+                return;
+            }
+            CivicBundle = new CivicBundle();
+            FilePath = null;
+            AddCivics(filePaths);
+            undoStack.Clear();
+            redoStack.Clear();
+            LastSavePoint = 1;
+        }
+
+        private CivicBundle OpenBundle(string filename)
+        {
+            string text;
+            try
+            {
+                text = File.ReadAllText(filename);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load '{Path.GetFileName(filePath)}' ({ex.Message})!", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+            try
+            {
+                return CivicBundle.LoadFromText(text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to parse bundle from '{Path.GetFileName(filePath)}' ({ex.Message})!", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+        }
+
         public void Load(string filePath)
         {
-            CivicBundle = CivicBundle.LoadFromText(System.IO.File.ReadAllText(filePath));
+            var bundle = OpenBundle(filePath);
+            if (bundle == null) { return; }
+            CivicBundle = bundle;
             FilePath = filePath;
             undoStack.Clear();
             redoStack.Clear();
@@ -178,6 +219,24 @@ namespace EcoCivicsImportExportMod.Bundler
             {
                 MessageBox.Show($"Renamed '{civicReference.Name}' to '{newName}'.", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+        }
+
+        public void AddCivics(IEnumerable<string> filePaths)
+        {
+            Mutate((oldCivicBundle) =>
+            {
+                var civics = new List<BundledCivic>(oldCivicBundle.Civics.Select(c => (BundledCivic)c.Clone()));
+                foreach (string filePath in filePaths)
+                {
+                    var bundle = OpenBundle(filePath);
+                    if (bundle == null) { continue; }
+                    foreach (var innerCivic in bundle.Civics)
+                    {
+                        civics.Add(innerCivic);
+                    }
+                }
+                return new CivicBundle(civics);
+            });
         }
 
         public void RemoveCivic(CivicReference civicReference)
