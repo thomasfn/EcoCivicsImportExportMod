@@ -232,6 +232,17 @@ namespace EcoCivicsImportExportMod.Bundler
                     if (bundle == null) { continue; }
                     foreach (var innerCivic in bundle.Civics)
                     {
+                        if (FindCivic(innerCivic.AsReference) != null)
+                        {
+                            MessageBox.Show($"Failed to add civic '{innerCivic.Name}' - a civic by that name already exists in this bundle!", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Error);
+                            continue;
+                        }
+                        var conflicts = innerCivic.InlineObjects.Where(c => FindCivic(c.AsReference) != null);
+                        if (conflicts.Any())
+                        {
+                            MessageBox.Show($"Failed to add civic '{innerCivic.Name}' - this civic contains the following inline objects that already exist in this bundle:\n{string.Join("\n", conflicts.Select(c => $" - '{c.Name}"))}", "Eco Civic Bundler", MessageBoxButton.OK, MessageBoxImage.Error);
+                            continue;
+                        }
                         civics.Add(innerCivic);
                     }
                 }
