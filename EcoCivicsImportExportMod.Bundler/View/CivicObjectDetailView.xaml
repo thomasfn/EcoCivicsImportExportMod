@@ -26,6 +26,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Border Grid.Column="0" Grid.Row="0">
             <TextBlock Text="Type: "  />
@@ -52,9 +54,21 @@
             </TextBox>
         </Border>
         <Border Grid.Column="0" Grid.Row="2">
-            <TextBlock Text="Internal References: "  />
+            <TextBlock Text="Description: "  />
         </Border>
         <Border Grid.Column="1" Grid.Row="2">
+            <TextBox Text="{Binding Mode=TwoWay, Path=Description}" Grid.Column="1" Grid.Row="1" IsUndoEnabled="False">
+                <TextBox.InputBindings>
+                    <KeyBinding Gesture="Enter" 
+                    Command="local:CivicObjectDetailView.UpdateTextBoxBindingOnEnterCommand"
+                    CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType={x:Type TextBox}}}" />
+                </TextBox.InputBindings>
+            </TextBox>
+        </Border>
+        <Border Grid.Column="0" Grid.Row="3">
+            <TextBlock Text="Internal References: "  />
+        </Border>
+        <Border Grid.Column="1" Grid.Row="3">
             <ListBox ItemsSource="{Binding InternalReferences}" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -70,11 +84,30 @@
                 </ListBox.ItemTemplate>
             </ListBox>
         </Border>
-        <Border Grid.Column="0" Grid.Row="3">
+        <Border Grid.Column="0" Grid.Row="4">
             <TextBlock Text="External References: "  />
         </Border>
-        <Border Grid.Column="1" Grid.Row="3">
+        <Border Grid.Column="1" Grid.Row="4">
             <ListBox ItemsSource="{Binding ExternalReferences}" HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding IconSource}" />
+                            <TextBlock Text="&quot;" />
+                            <TextBlock Text="{Binding Name}" />
+                            <TextBlock Text="&quot; (" />
+                            <TextBlock Text="{Binding FullType}" />
+                            <TextBlock Text=")" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+        <Border Grid.Column="0" Grid.Row="5">
+            <TextBlock Text="Internal Dependants: "  />
+        </Border>
+        <Border Grid.Column="1" Grid.Row="5">
+            <ListBox ItemsSource="{Binding InternalDependants}" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
