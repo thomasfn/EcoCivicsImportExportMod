@@ -31,6 +31,7 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BundledCivic)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RawJson)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IconSource)));
                 UpdateSubobjects();
                 UpdateReferences();
                 
@@ -48,7 +49,12 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
 
         public string RawJson
         {
-            get => BundledCivic.Data.ToString();
+            get => bundledCivic.Data.ToString();
+        }
+
+        public string IconSource
+        {
+            get => Icons.TypeToIconSource(bundledCivic.Type);
         }
 
         public ObservableCollection<CivicObject> SubObjects { get; } = new ObservableCollection<CivicObject>();

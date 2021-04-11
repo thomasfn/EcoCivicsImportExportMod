@@ -59,6 +59,7 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding IconSource}" />
                             <TextBlock Text="&quot;" />
                             <TextBlock Text="{Binding Name}" />
                             <TextBlock Text="&quot; (" />
@@ -77,6 +78,7 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding IconSource}" />
                             <TextBlock Text="&quot;" />
                             <TextBlock Text="{Binding Name}" />
                             <TextBlock Text="&quot; (" />

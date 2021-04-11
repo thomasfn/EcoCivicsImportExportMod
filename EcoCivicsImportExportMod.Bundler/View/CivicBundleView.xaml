@@ -27,6 +27,7 @@
                 </HierarchicalDataTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type viewmodel:CivicObject}" ItemsSource="{Binding SubObjects}">
                     <StackPanel Orientation="Horizontal">
+                        <Image Source="{Binding IconSource}" />
                         <TextBlock Text="{Binding Name}" />
                     </StackPanel>
                 </HierarchicalDataTemplate>

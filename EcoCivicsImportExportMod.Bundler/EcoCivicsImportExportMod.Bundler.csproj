@@ -7,7 +7,39 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Icons\auction-hammer.png" />
+    <None Remove="Icons\clipboard-list.png" />
+    <None Remove="Icons\globe.png" />
+    <None Remove="Icons\map.png" />
+    <None Remove="Icons\money-bag.png" />
+    <None Remove="Icons\money.png" />
+    <None Remove="Icons\paper-bag--plus.png" />
+    <None Remove="Icons\paper-bag.png" />
+    <None Remove="Icons\piggy-bank.png" />
+    <None Remove="Icons\question.png" />
+    <None Remove="Icons\user-business-boss.png" />
+    <None Remove="Icons\user-silhouette.png" />
+    <None Remove="Icons\user.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Icons\auction-hammer.png" />
+    <Resource Include="Icons\clipboard-list.png" />
+    <Resource Include="Icons\globe.png" />
+    <Resource Include="Icons\map.png" />
+    <Resource Include="Icons\money-bag.png" />
+    <Resource Include="Icons\money.png" />
+    <Resource Include="Icons\paper-bag--plus.png" />
+    <Resource Include="Icons\paper-bag.png" />
+    <Resource Include="Icons\piggy-bank.png" />
+    <Resource Include="Icons\question.png" />
+    <Resource Include="Icons\user-business-boss.png" />
+    <Resource Include="Icons\user-silhouette.png" />
+    <Resource Include="Icons\user.png" />
   </ItemGroup>
 
 </Project>

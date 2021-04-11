@@ -1,8 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace EcoCivicsImportExportMod.Bundler.ViewModel
 {
@@ -20,12 +17,15 @@ namespace EcoCivicsImportExportMod.Bundler.ViewModel
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UnderlyingCivicReference)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FullType)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IconSource)));
             }
         }
 
         public string Name { get => underlyingCivicReference.Name; }
 
         public string FullType { get => underlyingCivicReference.Type; }
+
+        public string IconSource { get => Icons.TypeToIconSource(FullType); }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
