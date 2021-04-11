@@ -6,7 +6,7 @@ on:
       - 'staging'
 
 jobs:
-  build:
+  build-mod:
     runs-on: ubuntu-latest
     env:
       MODKIT_VERSION: 0.9.2.4-beta
@@ -17,7 +17,7 @@ jobs:
       with:
         dotnet-version: '3.1.x'
     - name: Fetch dependencies
-      run: dotnet restore
+      run: dotnet restore ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj
       env:
         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
     - name: Cache Eco dlls
@@ -30,7 +30,7 @@ jobs:
       if: steps.cache-eco-dlls.outputs.cache-hit != 'true'
       run: sh fetch-eco-reference-assemblies.sh
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj --configuration Release --no-restore
       env:
         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
     - name: Upload build artifact
@@ -38,3 +38,26 @@ jobs:
       with:
         name: mod-binaries-staging
         path: EcoCivicsImportExportMod/bin/Release/netcoreapp3.1/EcoCivicsImportExportMod.*
+  build-bundler-tool:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core 5.0
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.201'
+    - name: Fetch dependencies
+      run: dotnet restore ./EcoCivicsImportExportMod.Bundler/EcoCivicsImportExportMod.Bundler.csproj
+      env:
+        DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
+    - name: Build
+      run: dotnet build ./EcoCivicsImportExportMod.Bundler/EcoCivicsImportExportMod.Bundler.csproj --configuration Release --no-restore
+      env:
+        DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
+    - name: Archive
+      run: 7z a EcoCivicsImportExportMod.Bundler/bin/EcoCivicsImportExportMod.Bundler.zip ./EcoCivicsImportExportMod.Bundler/bin/Release/net5.0-windows/*
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: bundler-tool-binaries-staging
+        path: EcoCivicsImportExportMod.Bundler/bin/EcoCivicsImportExportMod.Bundler.zip
