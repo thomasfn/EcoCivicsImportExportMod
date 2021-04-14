@@ -86,13 +86,21 @@ The bundler tool allows civics that have been previously exported by the plugin 
 
 #### Usage
 When you first open the tool, you'll be presented with a clean slate.
+
 ![Bundler Clean Slate](./screenshots/bundler-fresh.png "Bundler Clean Slate")
+
 As the tip suggests, there are multiple ways you can get started. You can open an existing bundle or create a new one via the File menu, or drag one or more civic json files onto the tool from Windows Explorer. If you choose to create a new bundle, you'll be presented with an empty untitled bundle.
+
 ![Bundler New Bundle](./screenshots/bundler-new.png "Bundler New Bundle")
+
 In this view you can drag one or more civic json files onto the tool from Windows Explorer, or select Add to Bundle from the Edit menu to add civics to the bundle.
+
 ![Bundler Imported Civics](./screenshots/bundler-imported.png "Bundler Imported Civics")
+
 As you add civics to the bundle, they will display on the tree view to the left, by order of type and then name. The icons can be used to tell the civic types apart at a glance. Some civics hold sub-objects, for example a District Map may hold multiple Districts, and these can be seen by expanding the civic object node in the tree view. You can right click civics and click Remove from Bundle, or select them and click Remove Selected from Bundle in the Edit menu to remove a civic from the bundle. You can select any civic object node from the tree view to view further details.
+
 ![Bundler Object Detail View](./screenshots/bundler-detailview.png "Object Detail View")
+
 The detail view displays key information about the civic, including any references it has to other civics (either 'Internal', that is within the bundle, or 'External', that is outside of the bundle) and any other civics within the bundle that reference the civic ('Dependants'). The name and description of the civic objects can be changed here, but all other properties are immutable.
 
 Once the bundle has been assembled to your satisfaction, simply save it to the server's `civics` folder and the plugin's import command should be able to import it.
