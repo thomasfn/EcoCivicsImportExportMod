@@ -37,14 +37,14 @@ namespace Eco.Mods.CivicsImpExp
         {
             var obj = bundledCivic.CreateStub();
             ImportedObjects.Add(obj);
-            ReferenceMap.Add(new CivicReference(bundledCivic.Type, bundledCivic.Name), obj);
+            ReferenceMap.Add(bundledCivic.AsReference, obj);
             return obj;
         }
 
         public void Import(BundledCivic bundledCivic)
         {
             IHasID obj;
-            if (!ReferenceMap.TryGetValue(new CivicReference(bundledCivic.Type, bundledCivic.Name), out obj))
+            if (!ReferenceMap.TryGetValue(bundledCivic.AsReference, out obj))
             {
                 obj = ImportStub(bundledCivic);
             }
@@ -68,25 +68,6 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         #region Deserialisation
-
-        private string GetUniqueName(Registrar registrar, string original)
-        {
-            string name = original;
-            while (registrar.GetByName(name) != null)
-            {
-                var numberAtEndMatch = matchNumberAtEnd.Match(name);
-                if (numberAtEndMatch.Success)
-                {
-                    int num = int.Parse(numberAtEndMatch.Value);
-                    name = $"{name.Substring(0, name.Length - numberAtEndMatch.Length)}{num + 1}";
-                }
-                else
-                {
-                    name = $"{name} 2";
-                }
-            }
-            return name;
-        }
 
         private void DeserialiseObjectProperties(object target, JObject obj)
         {
@@ -244,13 +225,13 @@ namespace Eco.Mods.CivicsImpExp
             else
             {
                 target = Activator.CreateInstance(type);
+                if (target is IHasID hasID)
+                {
+                    var registrar = Registrars.Get(type);
+                    registrar.Insert(hasID);
+                }
             }
             DeserialiseGenericObject(obj, target);
-            if (target is IHasID hasID)
-            {
-                var registrar = Registrars.Get(type);
-                registrar.Insert(hasID);
-            }
             return target;
         }
 
@@ -267,10 +248,11 @@ namespace Eco.Mods.CivicsImpExp
                 try
                 {
                     var registrar = Registrars.Get(target.GetType());
-                    registrar.Rename(target as IHasID, GetUniqueName(registrar, name), true);
+                    registrar.Rename(target as IHasID, name, true);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger.Debug($"Got unusual error when trying to rename IHasID via registrar: {ex.Message}");
                     named.Name = name;
                 }
             }
