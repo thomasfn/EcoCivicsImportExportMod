@@ -159,14 +159,21 @@ namespace Eco.Mods.CivicsImpExp
 
         #region Importing
 
-        private static WorldObject FindFreeWorldObjectForCivic(Type civicType)
+        private static int GetUsedSlots(CivicObjectComponent civicObjectComponent, IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = null)
+        {
+            int modifier;
+            if (usedSlotsModifierDict == null || !usedSlotsModifierDict.TryGetValue(civicObjectComponent, out modifier)) { modifier = 0; }
+            return civicObjectComponent.UsedSlots + modifier;
+        }
+
+        private static WorldObject FindFreeWorldObjectForCivic(Type civicType, IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = null)
         {
             var worldObjectManager = ServiceHolder<IWorldObjectManager>.Obj;
             var relevantWorldObjects = worldObjectManager.All
                 .Where((worldObject) => worldObject.HasComponent<CivicObjectComponent>())
                 .Select((worldObject) => (worldObject, worldObject.GetComponent<CivicObjectComponent>()))
                 .Where((worldObjectAndComp) => worldObjectAndComp.Item2.ObjectType.IsAssignableFrom(civicType))
-                .Where((worldObjectAndComp) => worldObjectAndComp.Item2.UsedSlots < worldObjectAndComp.Item2.MaxCount);
+                .Where((worldObjectAndComp) => GetUsedSlots(worldObjectAndComp.Item2, usedSlotsModifierDict) < worldObjectAndComp.Item2.MaxCount);
             return relevantWorldObjects.FirstOrDefault().worldObject;
         }
 
@@ -229,9 +236,10 @@ namespace Eco.Mods.CivicsImpExp
 
             // Slot each civic into the relevant world object
             int numCivics = 0;
+            IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = new Dictionary<CivicObjectComponent, int>();
             foreach (var obj in importedObjects.Where((obj) => obj is IProposable && !(obj is IParentedEntry)))
             {
-                var worldObject = FindFreeWorldObjectForCivic(obj.GetType());
+                var worldObject = FindFreeWorldObjectForCivic(obj.GetType(), usedSlotsModifierDict);
                 if (worldObject == null)
                 {
                     // This should never happen as we already checked above for free slots and early'd out, but just in case...
@@ -240,8 +248,17 @@ namespace Eco.Mods.CivicsImpExp
                     lastImport.Clear();
                     return;
                 }
+                var civicObjectComponent = worldObject.GetComponent<CivicObjectComponent>();
                 var proposable = obj as IProposable;
                 proposable.SetHostObject(worldObject);
+                if (usedSlotsModifierDict.TryGetValue(civicObjectComponent, out int currentModifier))
+                {
+                    usedSlotsModifierDict[civicObjectComponent] = currentModifier + 1;
+                }
+                else
+                {
+                    usedSlotsModifierDict.Add(civicObjectComponent, 1);
+                }
                 user.Player.Msg(new LocString($"Imported {proposable.UILink()} from '{source}' onto {worldObject.UILink()}"));
                 ++numCivics;
             }
