@@ -9,7 +9,7 @@ jobs:
     name: Build Mod
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.9.2.4-beta
+      MODKIT_VERSION: 0.9.3.0-beta
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core 3.1
@@ -25,17 +25,8 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ./eco-dlls
-        key: ${{ env.MODKIT_VERSION }}-dlls
-    - name: Download Eco modkit
-      if: steps.cache-eco-dlls.outputs.cache-hit != 'true'
-      uses: prewk/s3-cp-action@master
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: 'eu-west-2'
-        SOURCE: s3://${{ secrets.AWS_BUCKET_NAME }}/modkits/EcoModKit_v${{ env.MODKIT_VERSION }}.zip
-        DEST: ./EcoModKit_v${{ env.MODKIT_VERSION }}.zip
-    - name: Extract Eco dlls
+        key: ${{ env.MODKIT_VERSION }}-ref-dlls
+    - name: Download Eco dlls
       if: steps.cache-eco-dlls.outputs.cache-hit != 'true'
       run: sh fetch-eco-reference-assemblies.sh
     - name: Build

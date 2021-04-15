@@ -1,5 +1,5 @@
 # Eco Civics Import Export Mod
-A server mod for Eco 9.2 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
+A server mod for Eco 9.3 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
 
 Supported civics:
 - Laws
@@ -117,7 +117,7 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 
 ### Linux
 
-1. Run `MODKIT_VERSION="0.9.2.4-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
+1. Run `MODKIT_VERSION="0.9.3.0-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
 2. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
