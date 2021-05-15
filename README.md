@@ -117,7 +117,7 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 
 ### Linux
 
-1. Run `MODKIT_VERSION="0.9.3.0-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
+1. Run `MODKIT_VERSION="0.9.3.4-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
 2. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
