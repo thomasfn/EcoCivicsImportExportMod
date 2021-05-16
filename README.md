@@ -131,5 +131,8 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 2. Build the `EcoCivicsImportExportMod.Bundler` project in Visual Studio
 3. Find the artifact in `EcoCivicsImportExportMod.Bundler\bin\{Debug|Release}\net5.0-windows`
 
+## Attributions
+- Some icons used in the Bundler Tool are by [Yusuke Kamiyamane](http://p.yusukekamiyamane.com/) licensed under a [Creative Commons Attribution 3.0 License](http://creativecommons.org/licenses/by/3.0/).
+
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
