@@ -24,10 +24,12 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Civics.Misc;
     using Gameplay.Objects;
     using Gameplay.Components;
+    using Gameplay.Economy;
 
     public class CivicsImpExpPlugin : IModKitPlugin, IInitializablePlugin, IChatCommandHandler
     {
-        private static IReadOnlyDictionary<string, Registrar> civicTypeToRegistrar;
+        private static IReadOnlyDictionary<string, Type> civicKeyToType;
+        private static IReadOnlyDictionary<string, Registrar> civicKeyToRegistrar;
 
         public const string ImportExportDirectory = "civics";
 
@@ -40,24 +42,27 @@ namespace Eco.Mods.CivicsImpExp
 
         public void Initialize(TimedTask timer)
         {
-            civicTypeToRegistrar = new Dictionary<string, Registrar>
+            civicKeyToType = new Dictionary<string, Type>
             {
-                {"law",             Registrars.Get<Law>() },
-                {"electionprocess", Registrars.Get<ElectionProcess>() },
-                {"electedtitle",    Registrars.Get<ElectedTitle>() },
-                {"demographic",     Registrars.Get<Demographic>() },
-                {"constitution",    Registrars.Get<Constitution>() },
-                {"amendment",       Registrars.Get<ConstitutionalAmendment>() },
-                {"districtmap",     Registrars.Get<DistrictMap>() },
+                {"law",             typeof(Law) },
+                {"electionprocess", typeof(ElectionProcess) },
+                {"electedtitle",    typeof(ElectedTitle) },
+                {"appointedtitle",  typeof(AppointedTitle) },
+                {"demographic",     typeof(Demographic) },
+                {"constitution",    typeof(Constitution) },
+                {"amendment",       typeof(ConstitutionalAmendment) },
+                {"districtmap",     typeof(DistrictMap) },
+                {"govaccount",      typeof(GovernmentBankAccount) },
             };
+            civicKeyToRegistrar = new Dictionary<string, Registrar>(civicKeyToType.Select((kv) => new KeyValuePair<string, Registrar>(kv.Key, Registrars.Get(kv.Value))));
             Logger.Info("Initialized and ready to go");
             Directory.CreateDirectory(ImportExportDirectory);
         }
 
-        private static bool TryGetRegistrarForCivicType(User user, string type, out Registrar registrar)
+        private static bool TryGetRegistrarForCivicKey(User user, string civicKey, out Type civicType, out Registrar registrar)
         {
-            if (civicTypeToRegistrar.TryGetValue(type, out registrar)) { return true; }
-            user.Player.Msg(new LocString($"Unknown civic type '{type}' (expecting one of {string.Join(", ", civicTypeToRegistrar.Keys.Select(type => $"'{type}'"))})"));
+            if (civicKeyToType.TryGetValue(civicKey, out civicType) && civicKeyToRegistrar.TryGetValue(civicKey, out registrar)) { return true; }
+            user.Player.Msg(new LocString($"Unknown civic key '{civicKey}' (expecting one of {string.Join(", ", civicKeyToRegistrar.Keys.Select(type => $"'{type}'"))})"));
             registrar = null;
             return false;
         }
@@ -65,35 +70,36 @@ namespace Eco.Mods.CivicsImpExp
         #region Exporting
 
         [ChatSubCommand("Civics", "Exports a civic object to a json file.", ChatAuthorizationLevel.Admin)]
-        public static void Export(User user, string type, int id)
+        public static void Export(User user, string civicKey, int id)
         {
-            if (!TryGetRegistrarForCivicType(user, type, out var registrar)) { return; }
+            if (!TryGetRegistrarForCivicKey(user, civicKey, out var civicType, out var registrar)) { return; }
             var obj = registrar.GetById(id);
-            if (obj == null)
+            if (obj == null || !civicType.IsAssignableFrom(obj.GetType()))
             {
-                user.Player.Msg(new LocString($"Failed to export {type}: none found by id {id}"));
+                user.Player.Msg(new LocString($"Failed to export {civicKey}: none found by id {id}"));
                 return;
             }
-            string outPath = Path.Combine("civics", $"{type}-{id}.json");
+            string outPath = Path.Combine("civics", $"{civicKey}-{id}.json");
             try
             {
                 Exporter.Export(obj, outPath);
             }
             catch (Exception ex)
             {
-                user.Player.Msg(new LocString($"Failed to export {type}: {ex.Message}"));
+                user.Player.Msg(new LocString($"Failed to export {civicKey}: {ex.Message}"));
                 Logger.Error(ex.ToString());
                 return;
             }
-            user.Player.Msg(new LocString($"Exported {type} {id} to '{outPath}'"));
+            user.Player.Msg(new LocString($"Exported {civicKey} {id} to '{outPath}'"));
         }
 
-        private static void ExportAllOfInternal(User user, string type, ref int successCount, ref int failCount)
+        private static void ExportAllOfInternal(User user, string civicKey, ref int successCount, ref int failCount)
         {
-            if (!TryGetRegistrarForCivicType(user, type, out var registrar)) { return; }
+            if (!TryGetRegistrarForCivicKey(user, civicKey, out var civicType, out var registrar)) { return; }
             foreach (var obj in registrar.All())
             {
-                string outPath = Path.Combine(ImportExportDirectory, $"{type}-{obj.Id}.json");
+                if (!civicType.IsAssignableFrom(obj.GetType())) { continue; }
+                string outPath = Path.Combine(ImportExportDirectory, $"{civicKey}-{obj.Id}.json");
                 try
                 {
                     Exporter.Export(obj, outPath);
@@ -101,7 +107,7 @@ namespace Eco.Mods.CivicsImpExp
                 }
                 catch (Exception ex)
                 {
-                    user.Player.Msg(new LocString($"Failed to export {type} {obj.Id}: {ex.Message}"));
+                    user.Player.Msg(new LocString($"Failed to export {civicKey} {obj.Id}: {ex.Message}"));
                     Logger.Error(ex.ToString());
                     ++failCount;
                 }
@@ -109,24 +115,24 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         [ChatSubCommand("Civics", "Exports all civic objects of a kind to json files.", ChatAuthorizationLevel.Admin)]
-        public static void ExportAllOf(User user, string type)
+        public static void ExportAllOf(User user, string civicKey)
         {
             int successCount = 0, failCount = 0;
-            ExportAllOfInternal(user, type, ref successCount, ref failCount);
+            ExportAllOfInternal(user, civicKey, ref successCount, ref failCount);
             if (failCount > 0)
             {
                 if (successCount == 0)
                 {
-                    user.Player.Msg(new LocString($"Failed to export all {failCount} of {type}"));
+                    user.Player.Msg(new LocString($"Failed to export all {failCount} of {civicKey}"));
                 }
                 else
                 {
-                    user.Player.Msg(new LocString($"Succesfully exported {successCount} of {type}, but failed to export {failCount} of {type}"));
+                    user.Player.Msg(new LocString($"Succesfully exported {successCount} of {civicKey}, but failed to export {failCount} of {civicKey}"));
                 }
             }
             else
             {
-                user.Player.Msg(new LocString($"Succesfully exported all {successCount} of {type}"));
+                user.Player.Msg(new LocString($"Succesfully exported all {successCount} of {civicKey}"));
             }
         }
 
@@ -134,9 +140,9 @@ namespace Eco.Mods.CivicsImpExp
         public static void ExportAll(User user)
         {
             int successCount = 0, failCount = 0;
-            foreach (var type in civicTypeToRegistrar.Keys)
+            foreach (var civicKey in civicKeyToRegistrar.Keys)
             {
-                ExportAllOfInternal(user, type, ref successCount, ref failCount);
+                ExportAllOfInternal(user, civicKey, ref successCount, ref failCount);
             }
             if (failCount > 0)
             {
@@ -234,6 +240,14 @@ namespace Eco.Mods.CivicsImpExp
             lastImport.Clear();
             lastImport.AddRange(importedObjects);
 
+            // Notify of import for non-proposables (e.g. bank accounts, appointed titles)
+            foreach (var obj in importedObjects.Where((obj) => !(obj is IProposable) && !(obj is IParentedEntry)))
+            {
+                var linkable = obj as ILinkable;
+                if (linkable == null) { continue; }
+                user.Player.Msg(new LocString($"Imported {linkable.UILink()} from '{source}'"));
+            }
+
             // Slot each civic into the relevant world object
             int numCivics = 0;
             IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = new Dictionary<CivicObjectComponent, int>();
@@ -261,13 +275,6 @@ namespace Eco.Mods.CivicsImpExp
                 }
                 user.Player.Msg(new LocString($"Imported {proposable.UILink()} from '{source}' onto {worldObject.UILink()}"));
                 ++numCivics;
-            }
-            
-            // If the bundle contains more than civic, wrap it into an election
-            if (numCivics > 1)
-            {
-                // TODO: This
-                // Don't forget to add the election to lastImport!
             }
         }
 
