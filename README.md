@@ -117,7 +117,7 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 
 ### Linux
 
-1. Run `MODKIT_VERSION="0.9.3.0-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
+1. Run `MODKIT_VERSION="0.9.3.4-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
 2. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
@@ -130,6 +130,9 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 1. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019
 2. Build the `EcoCivicsImportExportMod.Bundler` project in Visual Studio
 3. Find the artifact in `EcoCivicsImportExportMod.Bundler\bin\{Debug|Release}\net5.0-windows`
+
+## Attributions
+- Some icons used in the Bundler Tool are by [Yusuke Kamiyamane](http://p.yusukekamiyamane.com/) licensed under a [Creative Commons Attribution 3.0 License](http://creativecommons.org/licenses/by/3.0/).
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)

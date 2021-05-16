@@ -9,7 +9,7 @@ jobs:
     name: Build Mod
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.9.3.0-beta
+      MODKIT_VERSION: 0.9.3.4-beta
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core 3.1
