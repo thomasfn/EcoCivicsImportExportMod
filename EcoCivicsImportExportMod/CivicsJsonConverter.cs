@@ -21,6 +21,8 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Civics.Districts;
     using Gameplay.GameActions;
     using Gameplay.Utils;
+    using Gameplay.Economy.Money;
+    using Gameplay.Economy;
 
     public class CivicsJsonConverter : JsonConverter
     {
@@ -43,6 +45,10 @@ namespace Eco.Mods.CivicsImpExp
             {
                 rootObj = SerialiseDistrictMap(districtMap);
             }
+            else if (value is BankAccount bankAccount)
+            {
+                rootObj = SerialiseBankAccount(bankAccount);
+            }
             else
             {
                 rootObj = SerialiseGenericObject(value, value as IHasSubRegistrarEntries);
@@ -64,7 +70,11 @@ namespace Eco.Mods.CivicsImpExp
             {
                 obj.Add(new JProperty("description", SerialiseValue(simpleEntry.UserDescription)));
             }
-
+            if (value is IHasDualPermissions hasDualPermissions)
+            {
+                obj.Add(new JProperty("managers", SerialiseValue(hasDualPermissions.DualPermissions.ManagerSet)));
+                obj.Add(new JProperty("users", SerialiseValue(hasDualPermissions.DualPermissions.UserSet)));
+            }
             obj.Add(new JProperty("properties", SerialiseObjectProperties(value, value as IHasSubRegistrarEntries)));
             return obj;
         }
@@ -268,6 +278,22 @@ namespace Eco.Mods.CivicsImpExp
         {
             var jsonObj = SerialiseGenericObject(district);
             jsonObj.Add(new JProperty("color", SerialiseValue(district.Color)));
+            return jsonObj;
+        }
+
+        private JObject SerialiseBankAccount(BankAccount bankAccount)
+        {
+            var jsonObj = SerialiseGenericObject(bankAccount);
+            var holdingsArr = new JArray();
+            foreach (var holding in bankAccount.CurrencyHoldings.Values)
+            {
+                if (holding.Val <= 0.0f) { continue; }
+                var holdingObj = new JObject();
+                holdingObj.Add("currency", SerialiseObjectReference(holding.Currency));
+                holdingObj.Add("amount", holding.Val);
+                holdingsArr.Add(holdingObj);
+            }
+            jsonObj.Add("holdings", holdingsArr);
             return jsonObj;
         }
 

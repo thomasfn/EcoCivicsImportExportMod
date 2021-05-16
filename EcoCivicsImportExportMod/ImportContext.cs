@@ -24,6 +24,8 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Civics.Districts;
     using Gameplay.GameActions;
     using Gameplay.Utils;
+    using Gameplay.Economy.Money;
+    using Eco.Gameplay.Economy;
 
     public class ImportContext
     {
@@ -92,7 +94,7 @@ namespace Eco.Mods.CivicsImpExp
                     Logger.Error($"Can't deserialise {value.Type} into '{target.GetType().FullName}.{propertyInfo.Name}' (expecting Array)");
                     return;
                 }
-                DeserialiseControllerList(propertyInfo.GetValue(target), value.ToObject<JArray>());
+                DeserialiseControllerListOrHashSet(propertyInfo.GetValue(target), value.ToObject<JArray>());
             }
             else if (propertyInfo.SetMethod != null)
             {
@@ -268,6 +270,13 @@ namespace Eco.Mods.CivicsImpExp
             {
                 proposable.InitializeDraftProposable();
             }
+            if (target is IHasDualPermissions hasDualPermissions)
+            {
+                var managers = obj.Value<JArray>("managers");
+                DeserialiseControllerListOrHashSet(hasDualPermissions.DualPermissions.ManagerSet, managers);
+                var users = obj.Value<JArray>("users");
+                DeserialiseControllerListOrHashSet(hasDualPermissions.DualPermissions.UserSet, users);
+            }
             if (target is DistrictMap districtMap)
             {
                 var sizeJson = obj.Value<JArray>("size");
@@ -277,7 +286,7 @@ namespace Eco.Mods.CivicsImpExp
                     throw new InvalidOperationException($"Tried to import district map with a different world size (expecting {districtMap.Map.Size}, got {size})");
                 }
                 var districts = obj.Value<JArray>("districts");
-                DeserialiseControllerList(districtMap.Districts, districts);
+                DeserialiseControllerListOrHashSet(districtMap.Districts, districts);
                 var rows = obj.Value<JArray>("data");
                 for (int z = 0; z < size.Y; ++z)
                 {
@@ -300,6 +309,19 @@ namespace Eco.Mods.CivicsImpExp
             {
                 district2.SetColor((Color)DeserialiseValueAsType(obj.Value<JToken>("color"), typeof(Color)));
             }
+            if (target is BankAccount bankAccount)
+            {
+                var holdings = obj.Value<JArray>("holdings");
+                foreach (var value in holdings)
+                {
+                    if (value is JObject holding)
+                    {
+                        var currency = DeserialiseGenericObject(holding.Value<JObject>("currency"), typeof(Currency)) as Currency;
+                        if (currency == null) { continue; }
+                        bankAccount.AddCurrency(currency, holding.Value<float>("amount"));
+                    }
+                }
+            }
             DeserialiseObjectProperties(target, obj.Value<JObject>("properties"));
             if (target is IProposable proposable2)
             {
@@ -307,11 +329,11 @@ namespace Eco.Mods.CivicsImpExp
             }
         }
 
-        private void DeserialiseControllerList(object target, JArray token)
+        private void DeserialiseControllerListOrHashSet(object target, JArray token)
         {
             Type innerElementType = target.GetType().GetGenericArguments()[0];
             target.GetType().GetMethod("Clear", BindingFlags.Public | BindingFlags.Instance).Invoke(target, null);
-            var addMethod = target.GetType().GetMethod("Add", BindingFlags.Public | BindingFlags.Instance);
+            var addMethod = target.GetType().GetMethod("Add", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { innerElementType }, null);
             foreach (var element in token)
             {
                 addMethod.Invoke(target, new object[] { DeserialiseValueAsType(element, innerElementType) });
