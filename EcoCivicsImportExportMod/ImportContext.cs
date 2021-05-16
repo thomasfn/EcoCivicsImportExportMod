@@ -178,6 +178,11 @@ namespace Eco.Mods.CivicsImpExp
             var obj = registrar.GetByName(civicReference.Name);
             if (obj == null)
             {
+                // Eco bug: treasury bank account is undiscoverable until the server is restarted
+                if (civicReference.Type == typeof(TreasuryBankAccount) && civicReference.Name == "Treasury Bank Account")
+                {
+                    return BankAccountManager.Obj.Treasury();
+                }
                 throw new InvalidOperationException($"Failed to resolve reference '{civicReference.Name}' (of type '{civicReference.Type.FullName}')");
             }
             return obj;
