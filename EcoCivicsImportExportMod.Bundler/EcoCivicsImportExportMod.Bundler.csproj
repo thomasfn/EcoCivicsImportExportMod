@@ -20,6 +20,8 @@
     <None Remove="Icons\plus.png" />
     <None Remove="Icons\question.png" />
     <None Remove="Icons\user-business-boss.png" />
+    <None Remove="Icons\user-business.png" />
+    <None Remove="Icons\user-green.png" />
     <None Remove="Icons\user-silhouette.png" />
     <None Remove="Icons\user.png" />
   </ItemGroup>
@@ -42,6 +44,8 @@
     <Resource Include="Icons\plus.png" />
     <Resource Include="Icons\question.png" />
     <Resource Include="Icons\user-business-boss.png" />
+    <Resource Include="Icons\user-business.png" />
+    <Resource Include="Icons\user-green.png" />
     <Resource Include="Icons\user-silhouette.png" />
     <Resource Include="Icons\user.png" />
   </ItemGroup>

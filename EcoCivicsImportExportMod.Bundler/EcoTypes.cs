@@ -15,7 +15,7 @@ namespace EcoCivicsImportExportMod.Bundler
 
         public const string AppointedTitle = "Eco.Gameplay.Civics.Titles.AppointedTitle";
         public const string Currency = "Eco.Gameplay.Economy.Currency";
-        public const string GovernmentAccount = "Eco.Gameplay.Economy.GovernmentAccount";
+        public const string GovernmentAccount = "Eco.Gameplay.Economy.GovernmentBankAccount";
         public const string PersonalAccount = "Eco.Gameplay.Economy.PersonalAccount";
         public const string User = "Eco.Gameplay.Players.User";
     }

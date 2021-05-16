@@ -16,7 +16,7 @@ namespace EcoCivicsImportExportMod.Bundler
             { EcoTypes.ElectionProcess, "/EcoCivicsImportExportMod.Bundler;component/Icons/clipboard-list.png" },
             { EcoTypes.Law, "/EcoCivicsImportExportMod.Bundler;component/Icons/auction-hammer.png" },
 
-            //{ EcoTypes.AppointedTitle, "/EcoCivicsImportExportMod.Bundler;component/Icons/auction-hammer.png" },
+            { EcoTypes.AppointedTitle, "/EcoCivicsImportExportMod.Bundler;component/Icons/user-green.png" },
             { EcoTypes.Currency, "/EcoCivicsImportExportMod.Bundler;component/Icons/money.png" },
             { EcoTypes.PersonalAccount, "/EcoCivicsImportExportMod.Bundler;component/Icons/piggy-bank.png" },
             { EcoTypes.GovernmentAccount, "/EcoCivicsImportExportMod.Bundler;component/Icons/money-bag.png" },
