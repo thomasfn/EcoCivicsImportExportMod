@@ -98,7 +98,7 @@ namespace Eco.Mods.CivicsImpExp
             if (!TryGetRegistrarForCivicKey(user, civicKey, out var civicType, out var registrar)) { return; }
             foreach (var obj in registrar.All())
             {
-                if (civicType.IsAssignableFrom(obj.GetType())) { continue; }
+                if (!civicType.IsAssignableFrom(obj.GetType())) { continue; }
                 string outPath = Path.Combine(ImportExportDirectory, $"{civicKey}-{obj.Id}.json");
                 try
                 {
