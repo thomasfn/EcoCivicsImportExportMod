@@ -29,10 +29,12 @@ To find the ID of a civic, tag it in chat and hover it, the ID is displayed at t
 - `law`
 - `electionprocess`
 - `electedtitle`
+- `appointedtitle`
 - `demographic`
 - `constitution`
 - `amendment`
 - `districtmap`
+- `govaccount`
 
 The filename of the exported file will be as follows (relative to the server's working directory): `civics/<civictype>-<id>.json`. The command will inform you of this filename if serialisation is successful.
 
@@ -62,6 +64,10 @@ An import can be reversed by using the undo import command.
 `/civics undoimport`
 
 This will roll back the previously executed import, deleting any objects that it created. This will not go back more than one import, and it will not roll back imports from previous sessions (e.g. since a server restart). Use this command with caution as it wipes the objects entirely from memory without any regard for how they may have changed or been referenced since being imported.
+
+#### Government Accounts
+
+A bank account can be exported/imported as a civic if it's created as a Government Account. In this case it will persist the holdings (e.g. how much of each currency is held in the account), but not the transactions - the imported account will show an empty transaction log. The usual rules about dependencies apply to holdings as they reference currencies - these will need to be present before import.
 
 ### Importing Bundles
 A bundle is a number of civics that have been previously exported by the plugin, grouped up into a single file. This bundle can be imported via the same import command as single civics. When importing a bundle, all civics contained within the bundle are imported in one go, saving the need to run the command over and over again during workloads that involve importing a large number of civics (for example an entire government structure). Bundles can be assembled manually or using the included bundler tool (see [Bundler Tool](#bundler-tool)).
