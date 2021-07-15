@@ -11,6 +11,7 @@ namespace Eco.Mods.CivicsImpExp
     using Core.IoC;
 
     using Shared.Localization;
+    using Shared.Math;
 
     using Gameplay.Players;
     using Gameplay.Systems.Chat;
@@ -55,8 +56,8 @@ namespace Eco.Mods.CivicsImpExp
                 {"govaccount",      typeof(GovernmentBankAccount) },
             };
             civicKeyToRegistrar = new Dictionary<string, Registrar>(civicKeyToType.Select((kv) => new KeyValuePair<string, Registrar>(kv.Key, Registrars.Get(kv.Value))));
-            Logger.Info("Initialized and ready to go");
             Directory.CreateDirectory(ImportExportDirectory);
+            Logger.Info("Initialized and ready to go");
         }
 
         private static bool TryGetRegistrarForCivicKey(User user, string civicKey, out Type civicType, out Registrar registrar)
@@ -172,7 +173,7 @@ namespace Eco.Mods.CivicsImpExp
             return civicObjectComponent.UsedSlots + modifier;
         }
 
-        private static WorldObject FindFreeWorldObjectForCivic(Type civicType, IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = null)
+        private static WorldObject FindFreeWorldObjectForCivic(Type civicType, IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = null, Vector3? nearestTo = null)
         {
             var worldObjectManager = ServiceHolder<IWorldObjectManager>.Obj;
             var relevantWorldObjects = worldObjectManager.All
@@ -180,6 +181,11 @@ namespace Eco.Mods.CivicsImpExp
                 .Select((worldObject) => (worldObject, worldObject.GetComponent<CivicObjectComponent>()))
                 .Where((worldObjectAndComp) => worldObjectAndComp.Item2.ObjectType.IsAssignableFrom(civicType))
                 .Where((worldObjectAndComp) => GetUsedSlots(worldObjectAndComp.Item2, usedSlotsModifierDict) < worldObjectAndComp.Item2.MaxCount);
+            if (nearestTo != null)
+            {
+                relevantWorldObjects = relevantWorldObjects
+                    .OrderBy((worldObjectAndComp) => worldObjectAndComp.worldObject.Position.WrappedDistance(nearestTo.Value));
+            }
             return relevantWorldObjects.FirstOrDefault().worldObject;
         }
 
@@ -253,7 +259,7 @@ namespace Eco.Mods.CivicsImpExp
             IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = new Dictionary<CivicObjectComponent, int>();
             foreach (var obj in importedObjects.Where((obj) => obj is IProposable && !(obj is IParentedEntry)))
             {
-                var worldObject = FindFreeWorldObjectForCivic(obj.GetType(), usedSlotsModifierDict);
+                var worldObject = FindFreeWorldObjectForCivic(obj.GetType(), usedSlotsModifierDict, user.Player?.Position);
                 if (worldObject == null)
                 {
                     // This should never happen as we already checked above for free slots and early'd out, but just in case...
