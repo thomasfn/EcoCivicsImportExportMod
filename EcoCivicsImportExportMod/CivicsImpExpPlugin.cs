@@ -8,10 +8,10 @@ namespace Eco.Mods.CivicsImpExp
     using Core.Plugins.Interfaces;
     using Core.Utils;
     using Core.Systems;
-    using Core.IoC;
 
     using Shared.Localization;
     using Shared.Math;
+    using Shared.IoC;
 
     using Gameplay.Players;
     using Gameplay.Systems.Chat;
