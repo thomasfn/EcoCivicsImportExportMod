@@ -1,13 +1,15 @@
 # Eco Civics Import Export Mod
-A server mod for Eco 9.3 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
+A server mod for Eco 9.4 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
 
-Supported civics:
+Supported objects:
 - Laws
 - Election Processes
 - Elected Titles
+- Appointed (Registrar) Titles
 - Demographics
 - Constitutional Amendments
 - District Maps (only compatible when the world size is equivalent)
+- Government Bank Accounts
 
 ## Installation
 
@@ -119,15 +121,15 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 2. Extract the modkit and copy the dlls from `ReferenceAssemblies` to `eco-dlls` in the root directory (create the folder if it doesn't exist)
 3. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019
 4. Build the `EcoCivicsImportExportMod` project in Visual Studio
-5. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\netcoreapp3.1`
+5. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\net5.0`
 
 ### Linux
 
-1. Run `MODKIT_VERSION="0.9.3.4-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
+1. Run `MODKIT_VERSION="0.9.4.0-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
 2. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
-3. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/netcoreapp3.1`
+3. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/net5.0`
 
 ## Building Bundler Tool from Source
 
