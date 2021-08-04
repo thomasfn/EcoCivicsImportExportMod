@@ -125,8 +125,8 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 
 ### Linux
 
-1. Run `MODKIT_VERSION="0.9.4.0-beta" fetch-eco-reference-assemblies.sh` (change the modkit version as needed)
-2. Enter the `EcoCivicsImportExportMod` directory and run:
+1. Run `ECO_BRANCH="release" MODKIT_VERSION="0.9.4.0-beta" fetch-eco-reference-assemblies.sh` (change the modkit branch and version as needed)
+2. Enter the `EcoCi"vicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
 3. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/net5.0`
