@@ -12,6 +12,7 @@ namespace Eco.Mods.CivicsImpExp
     using Shared.Localization;
     using Shared.Math;
     using Shared.IoC;
+    using Shared.Items;
 
     using Gameplay.Players;
     using Gameplay.Systems.Chat;
@@ -31,6 +32,7 @@ namespace Eco.Mods.CivicsImpExp
     {
         private static IReadOnlyDictionary<string, Type> civicKeyToType;
         private static IReadOnlyDictionary<string, Registrar> civicKeyToRegistrar;
+        private static IReadOnlyDictionary<string, ProposableState> stateNamesToStates;
 
         public const string ImportExportDirectory = "civics";
 
@@ -56,6 +58,13 @@ namespace Eco.Mods.CivicsImpExp
                 {"govaccount",      typeof(GovernmentBankAccount) },
             };
             civicKeyToRegistrar = new Dictionary<string, Registrar>(civicKeyToType.Select((kv) => new KeyValuePair<string, Registrar>(kv.Key, Registrars.Get(kv.Value))));
+            stateNamesToStates = new Dictionary<string, ProposableState>
+            {
+                {"draft", ProposableState.Draft },
+                {"proposed", ProposableState.Proposed },
+                {"active", ProposableState.Active },
+                {"removed", ProposableState.Removed },
+            };
             Directory.CreateDirectory(ImportExportDirectory);
             Logger.Info("Initialized and ready to go");
         }
@@ -94,12 +103,13 @@ namespace Eco.Mods.CivicsImpExp
             user.Player.Msg(new LocString($"Exported {civicKey} {id} to '{outPath}'"));
         }
 
-        private static void ExportAllOfInternal(User user, string civicKey, ref int successCount, ref int failCount)
+        private static void ExportAllOfInternal(User user, string civicKey, ProposableState? stateFilter, ref int successCount, ref int failCount)
         {
             if (!TryGetRegistrarForCivicKey(user, civicKey, out var civicType, out var registrar)) { return; }
             foreach (var obj in registrar.All())
             {
                 if (!civicType.IsAssignableFrom(obj.GetType())) { continue; }
+                if (stateFilter != null && obj is IProposable proposable && proposable.State != stateFilter.Value) { continue; }
                 string outPath = Path.Combine(ImportExportDirectory, $"{civicKey}-{obj.Id}.json");
                 try
                 {
@@ -116,10 +126,20 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         [ChatSubCommand("Civics", "Exports all civic objects of a kind to json files.", ChatAuthorizationLevel.Admin)]
-        public static void ExportAllOf(User user, string civicKey)
+        public static void ExportAllOf(User user, string civicKey, string onlyThisState = "")
         {
             int successCount = 0, failCount = 0;
-            ExportAllOfInternal(user, civicKey, ref successCount, ref failCount);
+            ProposableState? stateFilter = null;
+            if (!string.IsNullOrEmpty(onlyThisState))
+            {
+                if (!stateNamesToStates.TryGetValue(onlyThisState, out var rawStateFilter))
+                {
+                    user.Player.Msg(new LocString($"Invalid civic state '{onlyThisState}'"));
+                    return;
+                }
+                stateFilter = rawStateFilter;
+            }
+            ExportAllOfInternal(user, civicKey, stateFilter, ref successCount, ref failCount);
             if (failCount > 0)
             {
                 if (successCount == 0)
@@ -138,12 +158,22 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         [ChatSubCommand("Civics", "Exports all civic objects to json files.", ChatAuthorizationLevel.Admin)]
-        public static void ExportAll(User user)
+        public static void ExportAll(User user, string onlyThisState = "")
         {
+            ProposableState? stateFilter = null;
+            if (!string.IsNullOrEmpty(onlyThisState))
+            {
+                if (!stateNamesToStates.TryGetValue(onlyThisState, out var rawStateFilter))
+                {
+                    user.Player.Msg(new LocString($"Invalid civic state '{onlyThisState}'"));
+                    return;
+                }
+                stateFilter = rawStateFilter;
+            }
             int successCount = 0, failCount = 0;
             foreach (var civicKey in civicKeyToRegistrar.Keys)
             {
-                ExportAllOfInternal(user, civicKey, ref successCount, ref failCount);
+                ExportAllOfInternal(user, civicKey, stateFilter, ref successCount, ref failCount);
             }
             if (failCount > 0)
             {

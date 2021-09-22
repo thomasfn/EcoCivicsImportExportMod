@@ -12,9 +12,9 @@ Supported objects:
 - Government Bank Accounts
 
 ## Installation
-
-- Copy the `EcoCivicsImportExportMod.dll` file to `Mods` folder of the dedicated server.
-- Restart the server.
+1. Download `EcoCivicsImportExportMod.dll` from the [latest release](https://github.com/thomasfn/EcoCivicsImportExportMod/releases).
+2. Copy the `EcoCivicsImportExportMod.dll` file to `Mods` folder of the dedicated server.
+3. Restart the server.
 
 ## Usage
 
@@ -44,12 +44,21 @@ You can rename the file outside of the game if you wish, as the name of the file
 
 The `exportallof` command will serialise all civic objects of a type. It's the equivalent of running the `export` command for each civic object individually.
 
-`/civics exportallof <civictype>`
-e.g. `/civics exportallof law`
+`/civics exportallof <civictype> [state]`
+e.g. `/civics exportallof law` or `/civics exportallof law,active`
 
 The `exportall` command will serialise all civic objects of all types. It's the equivalent of running the `exportallof` command for each civic type individually.
 
-`/civics exportall`
+`/civics exportall [state]`
+e.g. `/civics exportall` or `/civics exportall active`
+
+Note that the state argument in the above commands is optional, but if present must be one of:
+- `draft` (the civic has not yet been proposed)
+- `proposed` (the civic is proposed and an election is running for it)
+- `active` (the civic is in play)
+- `removed` (the civic has been entirely removed)
+
+For non-proposable objects, e.g. bank accounts or appointed titles, the state argument is ignored.
 
 ### Importing Civics
 The import command will attempt to deserialise a civic object from the specified json file. If it fails at any stage, the civic object (if it managed to created one) will be immediately destroyed with no side effects. The file must be placed in the "civics" folder in the server's working directory. Alternatively, a download URL may be specified.
