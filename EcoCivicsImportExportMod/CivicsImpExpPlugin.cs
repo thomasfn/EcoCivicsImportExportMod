@@ -261,6 +261,23 @@ namespace Eco.Mods.CivicsImpExp
                 }
             }
 
+            // Perform migrations
+            IEnumerable<string> migrationReport;
+            try
+            {
+                migrationReport = bundle.ApplyMigrations();
+            }
+            catch (Exception ex)
+            {
+                user.Player.Msg(new LocString($"Failed to perform migrations on civic: {ex.Message}"));
+                Logger.Error(ex.ToString());
+                return;
+            }
+            if (migrationReport.Count() > 0)
+            {
+                user.Player.Msg(new LocString($"Some migrations were performed:\n{string.Join("\n", migrationReport)}"));
+            }
+
             // Import the objects from the bundle
             IEnumerable<IHasID> importedObjects;
             try
