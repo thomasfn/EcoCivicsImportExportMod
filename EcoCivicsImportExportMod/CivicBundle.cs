@@ -174,6 +174,21 @@ namespace Eco.Mods.CivicsImpExp
             => Civics.Select(c => c.AsReference).Contains(reference)
             || AllInlineObjects.Select(c => c.AsReference).Contains(reference);
 
+        public IEnumerable<string> ApplyMigrations()
+        {
+            var migrationReport = new List<string>();
+            var migrator = new Migrations.MigratorV1();
+            foreach (var obj in Civics)
+            {
+                if (migrator.ShouldMigrate(obj.Data))
+                {
+                    migrationReport.Add($"Applying migrations for {obj.AsReference}...");
+                    migrator.ApplyMigration(obj.Data, migrationReport);
+                }
+            }
+            return migrationReport;
+        }
+
         public IEnumerable<IHasID> ImportAll()
         {
             var importContext = new ImportContext();
