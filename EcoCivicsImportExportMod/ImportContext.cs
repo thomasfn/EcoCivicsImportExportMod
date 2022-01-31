@@ -170,7 +170,7 @@ namespace Eco.Mods.CivicsImpExp
         public object ResolveReference(CivicReference civicReference)
         {
             if (ReferenceMap.TryGetValue(civicReference, out IHasID internalObj)) { return internalObj; }
-            var registrar = Registrars.TypeToRegistrar[civicReference.Type];
+            var registrar = Registrars.GetByDerivedType(civicReference.Type);
             if (registrar == null)
             {
                 throw new InvalidOperationException($"Can't resolve reference to a '{civicReference.Type.FullName}' ('{civicReference.Name}') as no registrar was found for that type");
@@ -234,7 +234,7 @@ namespace Eco.Mods.CivicsImpExp
                 target = Activator.CreateInstance(type);
                 if (target is IHasID hasID)
                 {
-                    var registrar = Registrars.Get(type);
+                    var registrar = Registrars.GetByDerivedType(type);
                     registrar.Insert(hasID);
                 }
             }
@@ -254,7 +254,7 @@ namespace Eco.Mods.CivicsImpExp
             {
                 try
                 {
-                    var registrar = Registrars.Get(target.GetType());
+                    var registrar = Registrars.GetByDerivedType(target.GetType());
                     registrar.Rename(target as IHasID, name, true);
                 }
                 catch (Exception ex)

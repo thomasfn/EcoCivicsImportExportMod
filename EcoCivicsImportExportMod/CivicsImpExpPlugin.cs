@@ -15,7 +15,7 @@ namespace Eco.Mods.CivicsImpExp
     using Shared.Items;
 
     using Gameplay.Players;
-    using Gameplay.Systems.Chat;
+    using Gameplay.Systems.Messaging.Chat.Commands;
     using Gameplay.Systems.TextLinks;
     using Gameplay.Civics;
     using Gameplay.Civics.Laws;
@@ -27,11 +27,18 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Objects;
     using Gameplay.Components;
     using Gameplay.Economy;
+    
+
+    public struct RawUser
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
 
     public class CivicsImpExpPlugin : IModKitPlugin, IInitializablePlugin, IChatCommandHandler
     {
         private static IReadOnlyDictionary<string, Type> civicKeyToType;
-        private static IReadOnlyDictionary<string, Registrar> civicKeyToRegistrar;
+        private static IReadOnlyDictionary<string, IRegistrar> civicKeyToRegistrar;
         private static IReadOnlyDictionary<string, ProposableState> stateNamesToStates;
 
         public const string ImportExportDirectory = "civics";
@@ -57,7 +64,7 @@ namespace Eco.Mods.CivicsImpExp
                 {"districtmap",     typeof(DistrictMap) },
                 {"govaccount",      typeof(GovernmentBankAccount) },
             };
-            civicKeyToRegistrar = new Dictionary<string, Registrar>(civicKeyToType.Select((kv) => new KeyValuePair<string, Registrar>(kv.Key, Registrars.Get(kv.Value))));
+            civicKeyToRegistrar = new Dictionary<string, IRegistrar>(civicKeyToType.Select((kv) => new KeyValuePair<string, IRegistrar>(kv.Key, Registrars.GetByDerivedType(kv.Value))));
             stateNamesToStates = new Dictionary<string, ProposableState>
             {
                 {"draft", ProposableState.Draft },
@@ -69,7 +76,7 @@ namespace Eco.Mods.CivicsImpExp
             Logger.Info("Initialized and ready to go");
         }
 
-        private static bool TryGetRegistrarForCivicKey(User user, string civicKey, out Type civicType, out Registrar registrar)
+        private static bool TryGetRegistrarForCivicKey(User user, string civicKey, out Type civicType, out IRegistrar registrar)
         {
             if (civicKeyToType.TryGetValue(civicKey, out civicType) && civicKeyToRegistrar.TryGetValue(civicKey, out registrar)) { return true; }
             user.Player.Msg(new LocString($"Unknown civic key '{civicKey}' (expecting one of {string.Join(", ", civicKeyToRegistrar.Keys.Select(type => $"'{type}'"))})"));

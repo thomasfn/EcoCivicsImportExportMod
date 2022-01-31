@@ -22,7 +22,7 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         public IHasID Resolve()
-            => Registrars.Get(Type).GetByName(Name);
+            => Registrars.GetByDerivedType(Type).GetByName(Name);
 
         public override bool Equals(object obj)
             => obj is CivicReference reference && Equals(reference);
@@ -111,7 +111,7 @@ namespace Eco.Mods.CivicsImpExp
 
         public IHasID CreateStub()
         {
-            var registrar = Registrars.Get(Type);
+            var registrar = Registrars.GetByDerivedType(Type);
             if (registrar == null)
             {
                 throw new InvalidOperationException($"No registrar found for type '{Type.FullName}'");
