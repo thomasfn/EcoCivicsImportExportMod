@@ -25,12 +25,11 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.GameActions;
     using Gameplay.Utils;
     using Gameplay.Economy.Money;
-    using Eco.Gameplay.Economy;
+    using Gameplay.Economy;
+    using Gameplay.Settlements;
 
     public class ImportContext
     {
-        private static readonly Regex matchNumberAtEnd = new Regex(@"[0-9]+$", RegexOptions.Compiled);
-
         public IList<IHasID> ImportedObjects { get; } = new List<IHasID>();
 
         public IDictionary<CivicReference, IHasID> ReferenceMap { get; } = new Dictionary<CivicReference, IHasID>();
@@ -52,6 +51,7 @@ namespace Eco.Mods.CivicsImpExp
             }
             if (obj is IProposable proposable)
             {
+                proposable.Settlement = SettlementManager.Obj.LegacySettlement;
                 proposable.InitializeDraftProposable();
                 DeserialiseGenericObject(bundledCivic.Data, obj);
                 proposable.SetProposedState(ProposableState.Draft, true, true);
