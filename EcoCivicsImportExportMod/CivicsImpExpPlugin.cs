@@ -155,12 +155,12 @@ namespace Eco.Mods.CivicsImpExp
                 }
                 else
                 {
-                    user.Player.Msg(new LocString($"Succesfully exported {successCount} of {civicKey}, but failed to export {failCount} of {civicKey}"));
+                    user.Player.Msg(new LocString($"successfully exported {successCount} of {civicKey}, but failed to export {failCount} of {civicKey}"));
                 }
             }
             else
             {
-                user.Player.Msg(new LocString($"Succesfully exported all {successCount} of {civicKey}"));
+                user.Player.Msg(new LocString($"successfully exported all {successCount} of {civicKey}"));
             }
         }
 
@@ -190,12 +190,12 @@ namespace Eco.Mods.CivicsImpExp
                 }
                 else
                 {
-                    user.Player.Msg(new LocString($"Succesfully exported {successCount} civic objects, but failed to export {failCount} of civic objects"));
+                    user.Player.Msg(new LocString($"successfully exported {successCount} civic objects, but failed to export {failCount} of civic objects"));
                 }
             }
             else
             {
-                user.Player.Msg(new LocString($"Succesfully exported all {successCount} civic objects"));
+                user.Player.Msg(new LocString($"successfully exported all {successCount} civic objects"));
             }
         }
 
@@ -249,7 +249,7 @@ namespace Eco.Mods.CivicsImpExp
             catch (Exception ex)
             {
                 user.Player.Msg(new LocString($"Failed to import bundle: {ex.Message}"));
-                Logger.Error(ex.ToString());
+                Logger.Error($"Exception while importing from '{source}': {ex}");
                 return;
             }
 
@@ -294,7 +294,6 @@ namespace Eco.Mods.CivicsImpExp
             catch (Exception ex)
             {
                 user.Player.Msg(new LocString($"Failed to import civic: {ex.Message}"));
-                Logger.Error(ex.ToString());
                 return;
             }
             lastImport.Clear();
