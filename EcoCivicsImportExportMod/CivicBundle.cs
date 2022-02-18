@@ -22,7 +22,7 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         public IHasID Resolve()
-            => Registrars.Get(Type).GetByName(Name);
+            => Registrars.GetByDerivedType(Type).GetByName(Name);
 
         public override bool Equals(object obj)
             => obj is CivicReference reference && Equals(reference);
@@ -111,7 +111,7 @@ namespace Eco.Mods.CivicsImpExp
 
         public IHasID CreateStub()
         {
-            var registrar = Registrars.Get(Type);
+            var registrar = Registrars.GetByDerivedType(Type);
             if (registrar == null)
             {
                 throw new InvalidOperationException($"No registrar found for type '{Type.FullName}'");
@@ -196,15 +196,31 @@ namespace Eco.Mods.CivicsImpExp
             {
                 foreach (var civic in Civics)
                 {
-                    importContext.ImportStub(civic);
-                    foreach (var inlineCivic in civic.InlineObjects)
+                    try
                     {
-                        importContext.ImportStub(inlineCivic);
+                        importContext.ImportStub(civic);
+                        foreach (var inlineCivic in civic.InlineObjects)
+                        {
+                            importContext.ImportStub(inlineCivic);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Failed to import stub for civic {civic.AsReference}: {ex}");
+                        throw;
                     }
                 }
                 foreach (var civic in Civics)
                 {
-                    importContext.Import(civic);
+                    try
+                    {
+                        importContext.Import(civic);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Failed to import civic {civic.AsReference}: {ex}");
+                        throw;
+                    }
                 }
             }
             catch

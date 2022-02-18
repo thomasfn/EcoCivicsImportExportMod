@@ -9,8 +9,8 @@ jobs:
   build-mod:
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.9.4.3-beta
-      ECO_BRANCH: release
+      MODKIT_VERSION: 0.9.5.0-beta-staging-2214
+      ECO_BRANCH: staging
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core 5.0
