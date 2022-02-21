@@ -50,6 +50,7 @@ namespace Eco.Mods.CivicsImpExp.Migrations._0950
         public bool ApplyMigration(JObject obj, IList<string> outMigrationReport)
         {
             var newArticles = obj.Value<JObject>("properties").Value<JArray>("NewArticles");
+            bool didMigrate = false;
             foreach (var article in newArticles)
             {
                 var properties = article.Value<JObject>("properties");
@@ -63,6 +64,7 @@ namespace Eco.Mods.CivicsImpExp.Migrations._0950
                     properties.Remove("Executors");
                     properties.Add("Executors", newExecutors);
                     outMigrationReport.Add($"Replaced a Executors {(executors == null ? "null" : "GameValueWrapper<IAlias>")} with a GameValuePicker in a civic article of '{obj.Value<string>("name")}'");
+                    didMigrate = true;
                 }
                 var proposers = properties.Value<JObject>("Proposers");
                 if (proposers == null || proposers.Value<string>("type") == "GameValueWrapper")
@@ -74,9 +76,10 @@ namespace Eco.Mods.CivicsImpExp.Migrations._0950
                     properties.Remove("Proposers");
                     properties.Add("Proposers", newProposers);
                     outMigrationReport.Add($"Replaced a Proposers {(proposers == null ? "null" : "GameValueWrapper<IAlias>")} with a GameValuePicker in a civic article of '{obj.Value<string>("name")}'");
+                    didMigrate = true;
                 }
             }
-            return false;
+            return didMigrate;
         }
 
 

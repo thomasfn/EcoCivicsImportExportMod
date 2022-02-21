@@ -52,7 +52,15 @@ namespace Eco.Mods.CivicsImpExp
 
         public string TypeName { get => Data.Value<string>("type"); }
 
-        public Type Type { get => ReflectionUtils.GetTypeFromFullName(TypeName); }
+        public Type Type
+        {
+            get
+            {
+                var type = ReflectionUtils.GetTypeFromFullName(TypeName);
+                if (type == null) { throw new Exception($"Failed to resolve type '{TypeName}'"); }
+                return type;
+            }
+        }
 
         public CivicReference AsReference { get => new CivicReference(Type, Name); }
 
