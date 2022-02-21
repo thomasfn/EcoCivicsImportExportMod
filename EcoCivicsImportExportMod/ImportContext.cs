@@ -358,10 +358,12 @@ namespace Eco.Mods.CivicsImpExp
                 throw new InvalidOperationException($"Can't deserialise a '{gameValueContextType.FullName}' into a '{expectedType.FullName}'");
             }
             var gameValueContext = Activator.CreateInstance(gameValueContextType) as IGameValueContext;
-            string contextName = obj.Value<string>("contextName");
-            gameValueContextType.GetProperty("Name", BindingFlags.Public | BindingFlags.Instance).SetValue(gameValueContext, contextName, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
-            string tooltip = obj.Value<string>("tooltip");
-            gameValueContextType.GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(gameValueContext, tooltip, BindingFlags.Public | BindingFlags.Instance, null, null, null);
+            gameValueContextType.GetProperty("Name", BindingFlags.Public | BindingFlags.Instance)
+                .SetValue(gameValueContext, obj.Value<string>("_name"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
+            gameValueContextType.GetProperty("MarkedUpName", BindingFlags.Public | BindingFlags.Instance)
+                .SetValue(gameValueContext, obj.Value<string>("markedUpName"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
+            gameValueContextType.GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(gameValueContext, obj.Value<string>("contextDescription"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
             (gameValueContext as IController).Changed("Title");
             return gameValueContext;
         }

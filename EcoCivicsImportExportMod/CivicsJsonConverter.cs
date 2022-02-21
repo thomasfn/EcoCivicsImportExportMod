@@ -146,6 +146,10 @@ namespace Eco.Mods.CivicsImpExp
             {
                 return SerialiseGamePickerList(gamePickerListValue, inlineObjectContext);
             }
+            else if (value is IGameValueContext gameValueContext)
+            {
+                return SerialiseGameValueContext(gameValueContext);
+            }
             else if (value is INamed namedValue && (inlineObjectContext == null || !inlineObjectContext.SubRegistrarEntries.Contains(namedValue)))
             {
                 return SerialiseObjectReference(namedValue);
@@ -153,10 +157,6 @@ namespace Eco.Mods.CivicsImpExp
             else if (value is IEnumerable enumerableValue)
             {
                 return SerialiseList(enumerableValue, inlineObjectContext);
-            }
-            else if (value is IGameValueContext gameValueContext)
-            {
-                return SerialiseGameValueContext(gameValueContext);
             }
             else if (value is TriggerConfig triggerConfig)
             {
@@ -301,9 +301,11 @@ namespace Eco.Mods.CivicsImpExp
         {
             var jsonObj = new JObject();
             jsonObj.Add(new JProperty("type", "GameValueContext"));
-            jsonObj.Add(new JProperty("contextName", SerialiseValue(gameValueContext.ContextName)));
-            string tooltip = gameValueContext.GetType().GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(gameValueContext, BindingFlags.Public | BindingFlags.Instance, null, null, null) as string;
-            jsonObj.Add(new JProperty("tooltip", SerialiseValue(tooltip)));
+            jsonObj.Add(new JProperty("_name", SerialiseValue((gameValueContext as INamed)?.Name ?? "")));
+            jsonObj.Add(new JProperty("markedUpName", SerialiseValue((gameValueContext as INamed)?.MarkedUpName ?? "")));
+            string contextDescription = gameValueContext.GetType().GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(gameValueContext, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null) as string;
+            jsonObj.Add(new JProperty("contextDescription", SerialiseValue(contextDescription)));
             return jsonObj;
         }
 
