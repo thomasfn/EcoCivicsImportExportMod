@@ -9,8 +9,8 @@ jobs:
     name: Build Mod
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.9.5.0-beta-staging-2284
-      ECO_BRANCH: staging
+      MODKIT_VERSION: 0.9.5.0-beta
+      ECO_BRANCH: release
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core 5.0
@@ -31,7 +31,7 @@ jobs:
       if: steps.cache-eco-dlls.outputs.cache-hit != 'true'
       run: sh fetch-eco-reference-assemblies.sh
     - name: Build
-      run: dotnet build ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj --configuration Release --no-restore
+      run: dotnet build ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj --configuration Release --no-restore /p:AssemblyVersion=${{github.event.release.tag_name}}
       env:
         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
     - name: Upload build artifact
