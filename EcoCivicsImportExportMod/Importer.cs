@@ -29,7 +29,7 @@ namespace Eco.Mods.CivicsImpExp
 
         public static void Cleanup(IHasID obj)
         {
-            Registrars.Remove(obj);
+            Registrars.GetByDerivedType(obj.GetType()).Remove(obj);
             if (obj is IHasSubRegistrarEntries hasSubRegistrarEntries)
             {
                 foreach (var subObj in hasSubRegistrarEntries.SubRegistrarEntries)

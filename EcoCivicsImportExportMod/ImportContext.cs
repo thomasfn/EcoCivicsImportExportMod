@@ -25,12 +25,11 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.GameActions;
     using Gameplay.Utils;
     using Gameplay.Economy.Money;
-    using Eco.Gameplay.Economy;
+    using Gameplay.Economy;
+    using Gameplay.Settlements;
 
     public class ImportContext
     {
-        private static readonly Regex matchNumberAtEnd = new Regex(@"[0-9]+$", RegexOptions.Compiled);
-
         public IList<IHasID> ImportedObjects { get; } = new List<IHasID>();
 
         public IDictionary<CivicReference, IHasID> ReferenceMap { get; } = new Dictionary<CivicReference, IHasID>();
@@ -52,6 +51,7 @@ namespace Eco.Mods.CivicsImpExp
             }
             if (obj is IProposable proposable)
             {
+                proposable.Settlement = SettlementManager.Obj.LegacySettlement;
                 proposable.InitializeDraftProposable();
                 DeserialiseGenericObject(bundledCivic.Data, obj);
                 proposable.SetProposedState(ProposableState.Draft, true, true);
@@ -170,7 +170,7 @@ namespace Eco.Mods.CivicsImpExp
         public object ResolveReference(CivicReference civicReference)
         {
             if (ReferenceMap.TryGetValue(civicReference, out IHasID internalObj)) { return internalObj; }
-            var registrar = Registrars.TypeToRegistrar[civicReference.Type];
+            var registrar = Registrars.GetByDerivedType(civicReference.Type);
             if (registrar == null)
             {
                 throw new InvalidOperationException($"Can't resolve reference to a '{civicReference.Type.FullName}' ('{civicReference.Name}') as no registrar was found for that type");
@@ -234,7 +234,7 @@ namespace Eco.Mods.CivicsImpExp
                 target = Activator.CreateInstance(type);
                 if (target is IHasID hasID)
                 {
-                    var registrar = Registrars.Get(type);
+                    var registrar = Registrars.GetByDerivedType(type);
                     registrar.Insert(hasID);
                 }
             }
@@ -254,7 +254,7 @@ namespace Eco.Mods.CivicsImpExp
             {
                 try
                 {
-                    var registrar = Registrars.Get(target.GetType());
+                    var registrar = Registrars.GetByDerivedType(target.GetType());
                     registrar.Rename(target as IHasID, name, true);
                 }
                 catch (Exception ex)
@@ -358,12 +358,12 @@ namespace Eco.Mods.CivicsImpExp
                 throw new InvalidOperationException($"Can't deserialise a '{gameValueContextType.FullName}' into a '{expectedType.FullName}'");
             }
             var gameValueContext = Activator.CreateInstance(gameValueContextType) as IGameValueContext;
-            string contextName = obj.Value<string>("contextName");
-            gameValueContextType.GetProperty("ContextName", BindingFlags.Public | BindingFlags.Instance).SetValue(gameValueContext, contextName, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
-            string titleBacking = obj.Value<string>("titleBacking");
-            gameValueContextType.GetProperty("TitleBacking", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(gameValueContext, titleBacking, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
-            string tooltip = obj.Value<string>("tooltip");
-            gameValueContextType.GetProperty("Tooltip", BindingFlags.Public | BindingFlags.Instance).SetValue(gameValueContext, tooltip, BindingFlags.Public | BindingFlags.Instance, null, null, null);
+            gameValueContextType.GetProperty("Name", BindingFlags.Public | BindingFlags.Instance)
+                .SetValue(gameValueContext, obj.Value<string>("_name"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
+            gameValueContextType.GetProperty("MarkedUpName", BindingFlags.Public | BindingFlags.Instance)
+                .SetValue(gameValueContext, obj.Value<string>("markedUpName"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
+            gameValueContextType.GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(gameValueContext, obj.Value<string>("contextDescription"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
             (gameValueContext as IController).Changed("Title");
             return gameValueContext;
         }
@@ -388,15 +388,29 @@ namespace Eco.Mods.CivicsImpExp
 
         private GamePickerList DeserialiseGamePickerList(JObject obj, Type expectedType)
         {
-            if (!expectedType.IsAssignableFrom(typeof(GamePickerList)))
+            GamePickerList gamePickerList;
+            if (expectedType.IsConstructedGenericType)
+            {
+                Type innerType = expectedType.GetGenericArguments()[0];
+                Type gamePickerListType = typeof(GamePickerList<>).MakeGenericType(innerType);
+                if (!expectedType.IsAssignableFrom(gamePickerListType))
+                {
+                    throw new InvalidOperationException($"Can't deserialise a '{gamePickerListType.FullName}' into a '{expectedType.FullName}'");
+                }
+                gamePickerList = Activator.CreateInstance(gamePickerListType, new object[] { null }) as GamePickerList;
+            }
+            else if (expectedType.IsAssignableFrom(typeof(GamePickerList)))
+            {
+                gamePickerList = new GamePickerList();
+                JObject mustDeriveType = obj.Value<JObject>("mustDeriveType");
+                if (mustDeriveType != null)
+                {
+                    gamePickerList.MustDeriveType = DeserialiseValueAsType(mustDeriveType, typeof(Type)) as Type;
+                }
+            }
+            else
             {
                 throw new InvalidOperationException($"Can't deserialise a GamePickerList into a '{expectedType.FullName}'");
-            }
-            var gamePickerList = new GamePickerList();
-            JObject mustDeriveType = obj.Value<JObject>("mustDeriveType");
-            if (mustDeriveType != null)
-            {
-                gamePickerList.MustDeriveType = DeserialiseValueAsType(mustDeriveType, typeof(Type)) as Type;
             }
             string requiredTag = obj.Value<string>("requiredTag");
             if (!string.IsNullOrEmpty(requiredTag))
