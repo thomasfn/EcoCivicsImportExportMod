@@ -255,7 +255,8 @@ namespace Eco.Mods.CivicsImpExp
         private JObject SerialiseDistrictMap(DistrictMap districtMap)
         {
             var jsonObj = SerialiseGenericObject(districtMap, districtMap);
-            jsonObj.Add(new JProperty("districts", SerialiseList(districtMap.Districts, districtMap)));
+            var districtList = districtMap.Districts.Values.ToArray();
+            jsonObj.Add(new JProperty("districts", SerialiseList(districtList, districtMap)));
             var size = districtMap.Map.Size;
             jsonObj.Add(new JProperty("size", new JArray(size.X, size.Y)));
             var dataArr = new JArray();
@@ -266,7 +267,7 @@ namespace Eco.Mods.CivicsImpExp
                 {
                     int districtId = districtMap.Map[new Vector2i(x, z)];
                     var district = districtMap.GetDistrictByID(districtId);
-                    row.Add(districtMap.Districts.IndexOf(district));
+                    row.Add(districtList.IndexOf(d => d == district));
                 }
                 dataArr.Add(row);
             }

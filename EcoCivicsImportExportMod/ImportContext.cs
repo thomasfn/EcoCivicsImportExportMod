@@ -42,7 +42,7 @@ namespace Eco.Mods.CivicsImpExp
             return obj;
         }
 
-        public void Import(BundledCivic bundledCivic)
+        public void Import(BundledCivic bundledCivic, Settlement settlement)
         {
             IHasID obj;
             if (!ReferenceMap.TryGetValue(bundledCivic.AsReference, out obj))
@@ -51,7 +51,7 @@ namespace Eco.Mods.CivicsImpExp
             }
             if (obj is IProposable proposable)
             {
-                proposable.Settlement = SettlementManager.Obj.LegacySettlement;
+                proposable.Settlement = settlement;
                 proposable.InitializeDraftProposable();
                 DeserialiseGenericObject(bundledCivic.Data, obj);
                 proposable.SetProposedState(ProposableState.Draft, true, true);
