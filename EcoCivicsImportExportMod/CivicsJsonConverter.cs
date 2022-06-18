@@ -304,7 +304,7 @@ namespace Eco.Mods.CivicsImpExp
             jsonObj.Add(new JProperty("type", "GameValueContext"));
             jsonObj.Add(new JProperty("_name", SerialiseValue((gameValueContext as INamed)?.Name ?? "")));
             jsonObj.Add(new JProperty("markedUpName", SerialiseValue((gameValueContext as INamed)?.MarkedUpName ?? "")));
-            string contextDescription = gameValueContext.GetType().GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance)
+            string contextDescription = gameValueContext.GetType().GetProperty("ContextDescription", BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(gameValueContext, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null) as string;
             jsonObj.Add(new JProperty("contextDescription", SerialiseValue(contextDescription)));
             return jsonObj;

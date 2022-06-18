@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
-using System.Net;
+using System.Text;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 using Newtonsoft.Json;
 
@@ -10,18 +12,18 @@ namespace Eco.Mods.CivicsImpExp
 
     public static class Exporter
     {
-        private static readonly WebClient webClient = new WebClient();
+        private static readonly HttpClient httpClient = new HttpClient();
 
-        public static void Export(IHasID civicObject, string destination)
+        public static async Task Export(IHasID civicObject, string destination)
         {
             string text = JsonConvert.SerializeObject(civicObject, Formatting.Indented, new CivicsJsonConverter());
             if (Uri.TryCreate(destination, UriKind.Absolute, out Uri uri))
             {
-                webClient.UploadString(uri, text);
+                await httpClient.PostAsync(uri, new StringContent(text, Encoding.UTF8, "application/json"));
             }
             else
             {
-                File.WriteAllText(destination, text);
+                await File.WriteAllTextAsync(destination, text);
             }
             
         }

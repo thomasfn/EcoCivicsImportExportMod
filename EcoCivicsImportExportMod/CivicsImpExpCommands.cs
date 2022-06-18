@@ -3,6 +3,7 @@ using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Eco.Mods.CivicsImpExp
 {
@@ -69,7 +70,7 @@ namespace Eco.Mods.CivicsImpExp
         #region Exporting
 
         [ChatSubCommand("Civics", "Exports a civic object to a json file.", ChatAuthorizationLevel.Admin)]
-        public static void Export(IChatClient chatClient, string civicKey, int id)
+        public static async Task Export(IChatClient chatClient, string civicKey, int id)
         {
             if (!TryGetRegistrarForCivicKey(chatClient, civicKey, out var civicType, out var registrar)) { return; }
             var obj = registrar.GetById(id);
@@ -81,7 +82,7 @@ namespace Eco.Mods.CivicsImpExp
             string outPath = Path.Combine("civics", $"{civicKey}-{id}.json");
             try
             {
-                Exporter.Export(obj, outPath);
+                await Exporter.Export(obj, outPath);
             }
             catch (Exception ex)
             {
@@ -92,9 +93,10 @@ namespace Eco.Mods.CivicsImpExp
             chatClient.Msg(new LocString($"Exported {civicKey} {id} to '{outPath}'"));
         }
 
-        private static void ExportAllOfInternal(IChatClient chatClient, string civicKey, ProposableState? stateFilter, ref int successCount, ref int failCount)
+        private static async Task<(int successCount, int failCount)> ExportAllOfInternal(IChatClient chatClient, string civicKey, ProposableState? stateFilter)
         {
-            if (!TryGetRegistrarForCivicKey(chatClient, civicKey, out var civicType, out var registrar)) { return; }
+            if (!TryGetRegistrarForCivicKey(chatClient, civicKey, out var civicType, out var registrar)) { return (0, 0); }
+            int successCount = 0, failCount = 0;
             foreach (var obj in registrar.All())
             {
                 if (!civicType.IsAssignableFrom(obj.GetType())) { continue; }
@@ -102,7 +104,7 @@ namespace Eco.Mods.CivicsImpExp
                 string outPath = Path.Combine(CivicsImpExpPlugin.ImportExportDirectory, $"{civicKey}-{obj.Id}.json");
                 try
                 {
-                    Exporter.Export(obj, outPath);
+                    await Exporter.Export(obj, outPath);
                     ++successCount;
                 }
                 catch (Exception ex)
@@ -112,12 +114,12 @@ namespace Eco.Mods.CivicsImpExp
                     ++failCount;
                 }
             }
+            return (successCount, failCount);
         }
 
         [ChatSubCommand("Civics", "Exports all civic objects of a kind to json files.", ChatAuthorizationLevel.Admin)]
-        public static void ExportAllOf(IChatClient chatClient, string civicKey, string onlyThisState = "")
+        public static async Task ExportAllOf(IChatClient chatClient, string civicKey, string onlyThisState = "")
         {
-            int successCount = 0, failCount = 0;
             ProposableState? stateFilter = null;
             if (!string.IsNullOrEmpty(onlyThisState))
             {
@@ -128,7 +130,7 @@ namespace Eco.Mods.CivicsImpExp
                 }
                 stateFilter = rawStateFilter;
             }
-            ExportAllOfInternal(chatClient, civicKey, stateFilter, ref successCount, ref failCount);
+            var (successCount, failCount) = await ExportAllOfInternal(chatClient, civicKey, stateFilter);
             if (failCount > 0)
             {
                 if (successCount == 0)
@@ -147,7 +149,7 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         [ChatSubCommand("Civics", "Exports all civic objects to json files.", ChatAuthorizationLevel.Admin)]
-        public static void ExportAll(IChatClient clientClient, string onlyThisState = "")
+        public static async Task ExportAll(IChatClient clientClient, string onlyThisState = "")
         {
             ProposableState? stateFilter = null;
             if (!string.IsNullOrEmpty(onlyThisState))
@@ -159,25 +161,27 @@ namespace Eco.Mods.CivicsImpExp
                 }
                 stateFilter = rawStateFilter;
             }
-            int successCount = 0, failCount = 0;
+            int allSuccessCount = 0, allFailCount = 0;
             foreach (var civicKey in civicKeyToType.Keys)
             {
-                ExportAllOfInternal(clientClient, civicKey, stateFilter, ref successCount, ref failCount);
+                var (successCount, failCount) = await ExportAllOfInternal(clientClient, civicKey, stateFilter);
+                allSuccessCount += successCount;
+                allFailCount += failCount;
             }
-            if (failCount > 0)
+            if (allFailCount > 0)
             {
-                if (successCount == 0)
+                if (allSuccessCount == 0)
                 {
-                    clientClient.Msg(new LocString($"Failed to export all {failCount} civic objects"));
+                    clientClient.Msg(new LocString($"Failed to export all {allFailCount} civic objects"));
                 }
                 else
                 {
-                    clientClient.Msg(new LocString($"successfully exported {successCount} civic objects, but failed to export {failCount} of civic objects"));
+                    clientClient.Msg(new LocString($"successfully exported {allSuccessCount} civic objects, but failed to export {allFailCount} of civic objects"));
                 }
             }
             else
             {
-                clientClient.Msg(new LocString($"successfully exported all {successCount} civic objects"));
+                clientClient.Msg(new LocString($"successfully exported all {allSuccessCount} civic objects"));
             }
         }
 
@@ -220,7 +224,7 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         [ChatSubCommand("Civics", "Imports a civic object from a json file.", ChatAuthorizationLevel.Admin)]
-        public static void Import(IChatClient chatClient, string source, Settlement targetSettlement = null)
+        public static async Task Import(IChatClient chatClient, string source, Settlement targetSettlement = null)
         {
             // Check settlement
             if (FeatureConfig.Obj.SettlementSystemEnabled && targetSettlement == null)
@@ -233,7 +237,7 @@ namespace Eco.Mods.CivicsImpExp
             CivicBundle bundle;
             try
             {
-                bundle = Importer.ImportBundle(source);
+                bundle = await Importer.ImportBundle(source);
             }
             catch (Exception ex)
             {
@@ -336,13 +340,13 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         [ChatSubCommand("Civics", "Prints details about a civic bundle without actually importing anything.", ChatAuthorizationLevel.Admin)]
-        public static void BundleInfo(IChatClient chatClient, string source)
+        public static async Task BundleInfo(IChatClient chatClient, string source)
         {
             // Import the bundle
             CivicBundle bundle;
             try
             {
-                bundle = Importer.ImportBundle(source);
+                bundle = await Importer.ImportBundle(source);
             }
             catch (Exception ex)
             {

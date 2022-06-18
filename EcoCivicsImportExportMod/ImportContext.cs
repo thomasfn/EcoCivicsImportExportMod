@@ -362,7 +362,7 @@ namespace Eco.Mods.CivicsImpExp
                 .SetValue(gameValueContext, obj.Value<string>("_name"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
             gameValueContextType.GetProperty("MarkedUpName", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("markedUpName"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
-            gameValueContextType.GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance)
+            gameValueContextType.GetProperty("ContextDescription", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("contextDescription"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
             (gameValueContext as IController).Changed("Title");
             return gameValueContext;
