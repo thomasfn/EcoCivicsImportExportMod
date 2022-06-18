@@ -9,14 +9,14 @@ jobs:
   build-mod:
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.9.5.0-beta
-      ECO_BRANCH: release
+      MODKIT_VERSION: 0.9.6.0-beta-staging-2318
+      ECO_BRANCH: staging
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core 5.0
+    - name: Setup .NET Core 6.0
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '5.0.x'
+        dotnet-version: '6.0.x'
     - name: Fetch dependencies
       run: dotnet restore ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj
       env:
@@ -38,7 +38,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: mod-binaries-staging
-        path: EcoCivicsImportExportMod/bin/Release/net5.0/EcoCivicsImportExportMod.*
+        path: EcoCivicsImportExportMod/bin/Release/net6.0/EcoCivicsImportExportMod.*
   build-bundler-tool:
     runs-on: windows-latest
     steps:

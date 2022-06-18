@@ -42,7 +42,7 @@ namespace Eco.Mods.CivicsImpExp
             return obj;
         }
 
-        public void Import(BundledCivic bundledCivic)
+        public void Import(BundledCivic bundledCivic, Settlement settlement)
         {
             IHasID obj;
             if (!ReferenceMap.TryGetValue(bundledCivic.AsReference, out obj))
@@ -51,7 +51,7 @@ namespace Eco.Mods.CivicsImpExp
             }
             if (obj is IProposable proposable)
             {
-                proposable.Settlement = SettlementManager.Obj.LegacySettlement;
+                proposable.Settlement = settlement;
                 proposable.InitializeDraftProposable();
                 DeserialiseGenericObject(bundledCivic.Data, obj);
                 proposable.SetProposedState(ProposableState.Draft, true, true);
@@ -362,7 +362,7 @@ namespace Eco.Mods.CivicsImpExp
                 .SetValue(gameValueContext, obj.Value<string>("_name"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
             gameValueContextType.GetProperty("MarkedUpName", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("markedUpName"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
-            gameValueContextType.GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance)
+            gameValueContextType.GetProperty("ContextDescription", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("contextDescription"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
             (gameValueContext as IController).Changed("Title");
             return gameValueContext;

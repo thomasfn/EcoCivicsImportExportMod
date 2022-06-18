@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 namespace Eco.Mods.CivicsImpExp
 {
     using Core.Systems;
-
+    using Gameplay.Settlements;
     using Shared.Utils;
 
     public readonly struct CivicReference : IEquatable<CivicReference>
@@ -197,7 +197,7 @@ namespace Eco.Mods.CivicsImpExp
             return migrationReport;
         }
 
-        public IEnumerable<IHasID> ImportAll()
+        public IEnumerable<IHasID> ImportAll(Settlement settlement)
         {
             var importContext = new ImportContext();
             try
@@ -222,7 +222,7 @@ namespace Eco.Mods.CivicsImpExp
                 {
                     try
                     {
-                        importContext.Import(civic);
+                        importContext.Import(civic, settlement);
                     }
                     catch (Exception ex)
                     {
