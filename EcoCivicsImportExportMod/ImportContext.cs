@@ -291,9 +291,11 @@ namespace Eco.Mods.CivicsImpExp
                     throw new InvalidOperationException($"Tried to import district map with a different world size (expecting {districtMap.Map.Size}, got {size})");
                 }
                 var districts = obj.Value<JArray>("districts");
+                var districtList = new List<District>();
                 foreach (var districtObj in districts)
                 {
                     var district = DeserialiseValueAsType(districtObj, typeof(District)) as District;
+                    districtList.Add(district);
                     if (district == null) { continue; }
                     districtMap.Districts.Add(district.Id, district);
                 }
@@ -306,8 +308,11 @@ namespace Eco.Mods.CivicsImpExp
                         var localId = row.Value<int>(x);
                         if (localId >= 0)
                         {
-                            var district = districtMap.Districts[localId];
-                            districtMap.Map[new Vector2i(x, z)] = district.Id;
+                            var district = districtList[localId];
+                            if (district != null)
+                            {
+                                districtMap.Map[new Vector2i(x, z)] = district.Id;
+                            }
                         }
                     }
                 }
