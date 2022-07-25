@@ -360,7 +360,7 @@ namespace Eco.Mods.CivicsImpExp
             var gameValueContext = Activator.CreateInstance(gameValueContextType) as IGameValueContext;
             gameValueContextType.GetProperty("Name", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("_name"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
-            gameValueContextType.GetProperty("MarkedUpName", BindingFlags.Public | BindingFlags.Instance)
+            gameValueContextType.GetProperty("MarkedUpNameString", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("markedUpName"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
             gameValueContextType.GetProperty("ContextDescription", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("contextDescription"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
