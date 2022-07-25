@@ -291,7 +291,12 @@ namespace Eco.Mods.CivicsImpExp
                     throw new InvalidOperationException($"Tried to import district map with a different world size (expecting {districtMap.Map.Size}, got {size})");
                 }
                 var districts = obj.Value<JArray>("districts");
-                DeserialiseControllerListOrHashSet(districtMap.Districts, districts);
+                foreach (var districtObj in districts)
+                {
+                    var district = DeserialiseValueAsType(districtObj, typeof(District)) as District;
+                    if (district == null) { continue; }
+                    districtMap.Districts.Add(district.Id, district);
+                }
                 var rows = obj.Value<JArray>("data");
                 for (int z = 0; z < size.Y; ++z)
                 {
