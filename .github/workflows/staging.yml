@@ -9,8 +9,8 @@ jobs:
   build-mod:
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.9.6.0-beta-staging-2419
-      ECO_BRANCH: staging
+      MODKIT_VERSION: 0.9.6.1-beta
+      ECO_BRANCH: release
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core 6.0
