@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace Eco.Mods.CivicsImpExp
@@ -11,18 +12,18 @@ namespace Eco.Mods.CivicsImpExp
 
     public static class Importer
     {
-        private static readonly WebClient webClient = new WebClient();
+        private static readonly HttpClient httpClient = new HttpClient();
 
-        public static CivicBundle ImportBundle(string source)
+        public static async Task<CivicBundle> ImportBundle(string source)
         {
             string text;
             if (Uri.TryCreate(source, UriKind.Absolute, out Uri uri))
             {
-                text = webClient.DownloadString(uri);
+                text = await httpClient.GetStringAsync(uri);
             }
             else
             {
-                text = File.ReadAllText(Path.Combine(CivicsImpExpPlugin.ImportExportDirectory, source));
+                text = await File.ReadAllTextAsync(Path.Combine(CivicsImpExpPlugin.ImportExportDirectory, source));
             }
             return CivicBundle.LoadFromText(text);
         }

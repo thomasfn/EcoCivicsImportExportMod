@@ -255,7 +255,8 @@ namespace Eco.Mods.CivicsImpExp
         private JObject SerialiseDistrictMap(DistrictMap districtMap)
         {
             var jsonObj = SerialiseGenericObject(districtMap, districtMap);
-            jsonObj.Add(new JProperty("districts", SerialiseList(districtMap.Districts, districtMap)));
+            var districtList = districtMap.Districts.Values.ToArray();
+            jsonObj.Add(new JProperty("districts", SerialiseList(districtList, districtMap)));
             var size = districtMap.Map.Size;
             jsonObj.Add(new JProperty("size", new JArray(size.X, size.Y)));
             var dataArr = new JArray();
@@ -266,7 +267,7 @@ namespace Eco.Mods.CivicsImpExp
                 {
                     int districtId = districtMap.Map[new Vector2i(x, z)];
                     var district = districtMap.GetDistrictByID(districtId);
-                    row.Add(districtMap.Districts.IndexOf(district));
+                    row.Add(districtList.IndexOf(d => d == district));
                 }
                 dataArr.Add(row);
             }
@@ -303,7 +304,7 @@ namespace Eco.Mods.CivicsImpExp
             jsonObj.Add(new JProperty("type", "GameValueContext"));
             jsonObj.Add(new JProperty("_name", SerialiseValue((gameValueContext as INamed)?.Name ?? "")));
             jsonObj.Add(new JProperty("markedUpName", SerialiseValue((gameValueContext as INamed)?.MarkedUpName ?? "")));
-            string contextDescription = gameValueContext.GetType().GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance)
+            string contextDescription = gameValueContext.GetType().GetProperty("ContextDescription", BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(gameValueContext, BindingFlags.NonPublic | BindingFlags.Instance, null, null, null) as string;
             jsonObj.Add(new JProperty("contextDescription", SerialiseValue(contextDescription)));
             return jsonObj;

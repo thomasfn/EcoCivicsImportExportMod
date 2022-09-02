@@ -42,7 +42,7 @@ namespace Eco.Mods.CivicsImpExp
             return obj;
         }
 
-        public void Import(BundledCivic bundledCivic)
+        public void Import(BundledCivic bundledCivic, Settlement settlement)
         {
             IHasID obj;
             if (!ReferenceMap.TryGetValue(bundledCivic.AsReference, out obj))
@@ -51,7 +51,7 @@ namespace Eco.Mods.CivicsImpExp
             }
             if (obj is IProposable proposable)
             {
-                proposable.Settlement = SettlementManager.Obj.LegacySettlement;
+                proposable.Settlement = settlement;
                 proposable.InitializeDraftProposable();
                 DeserialiseGenericObject(bundledCivic.Data, obj);
                 proposable.SetProposedState(ProposableState.Draft, true, true);
@@ -291,7 +291,14 @@ namespace Eco.Mods.CivicsImpExp
                     throw new InvalidOperationException($"Tried to import district map with a different world size (expecting {districtMap.Map.Size}, got {size})");
                 }
                 var districts = obj.Value<JArray>("districts");
-                DeserialiseControllerListOrHashSet(districtMap.Districts, districts);
+                var districtList = new List<District>();
+                foreach (var districtObj in districts)
+                {
+                    var district = DeserialiseValueAsType(districtObj, typeof(District)) as District;
+                    districtList.Add(district);
+                    if (district == null) { continue; }
+                    districtMap.Districts.Add(district.Id, district);
+                }
                 var rows = obj.Value<JArray>("data");
                 for (int z = 0; z < size.Y; ++z)
                 {
@@ -301,8 +308,11 @@ namespace Eco.Mods.CivicsImpExp
                         var localId = row.Value<int>(x);
                         if (localId >= 0)
                         {
-                            var district = districtMap.Districts[localId];
-                            districtMap.Map[new Vector2i(x, z)] = district.Id;
+                            var district = districtList[localId];
+                            if (district != null)
+                            {
+                                districtMap.Map[new Vector2i(x, z)] = district.Id;
+                            }
                         }
                     }
                 }
@@ -360,9 +370,9 @@ namespace Eco.Mods.CivicsImpExp
             var gameValueContext = Activator.CreateInstance(gameValueContextType) as IGameValueContext;
             gameValueContextType.GetProperty("Name", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("_name"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
-            gameValueContextType.GetProperty("MarkedUpName", BindingFlags.Public | BindingFlags.Instance)
+            gameValueContextType.GetProperty("MarkedUpNameString", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("markedUpName"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
-            gameValueContextType.GetProperty("ContextDescription", BindingFlags.NonPublic | BindingFlags.Instance)
+            gameValueContextType.GetProperty("ContextDescription", BindingFlags.Public | BindingFlags.Instance)
                 .SetValue(gameValueContext, obj.Value<string>("contextDescription"), BindingFlags.Public | BindingFlags.Instance, null, null, null);
             (gameValueContext as IController).Changed("Title");
             return gameValueContext;
