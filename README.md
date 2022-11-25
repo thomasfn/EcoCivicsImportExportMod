@@ -23,8 +23,8 @@ All chat commands require admin privileges.
 ### Exporting Civics
 The `export` command will serialise the specific civic object to a json file in the server's working directory, under a folder called `civics`.
 
-`/civics export <civictype>,<id>`
-e.g. `/civics export law,10`
+`/civics export <id>`
+e.g. `/civics export 10`
 
 To find the ID of a civic, tag it in chat and hover it, the ID is displayed at the bottom of the popup.
 `civictype` must be one of:
