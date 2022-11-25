@@ -14,7 +14,7 @@ namespace Eco.Mods.CivicsImpExp
     {
         private static readonly HttpClient httpClient = new HttpClient();
 
-        public static async Task Export(IHasID civicObject, string destination)
+        public static async Task Export(IHasUniversalID civicObject, string destination)
         {
             string text = JsonConvert.SerializeObject(civicObject, Formatting.Indented, new CivicsJsonConverter());
             if (Uri.TryCreate(destination, UriKind.Absolute, out Uri uri))

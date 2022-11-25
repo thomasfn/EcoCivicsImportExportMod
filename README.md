@@ -1,5 +1,5 @@
 # Eco Civics Import Export Mod
-A server mod for Eco 9.6 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
+A server mod for Eco 9.7 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
 
 Supported objects:
 - Laws
@@ -23,8 +23,8 @@ All chat commands require admin privileges.
 ### Exporting Civics
 The `export` command will serialise the specific civic object to a json file in the server's working directory, under a folder called `civics`.
 
-`/civics export <civictype>,<id>`
-e.g. `/civics export law,10`
+`/civics export <id>`
+e.g. `/civics export 10`
 
 To find the ID of a civic, tag it in chat and hover it, the ID is displayed at the bottom of the popup.
 `civictype` must be one of:
@@ -133,7 +133,7 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 5. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\net6.0`
 
 ### Linux
-1. Run `ECO_BRANCH="release" MODKIT_VERSION="0.9.6.1-beta" fetch-eco-reference-assemblies.sh` (change the modkit branch and version as needed)
+1. Run `ECO_BRANCH="release" MODKIT_VERSION="0.9.7.2-beta" fetch-eco-reference-assemblies.sh` (change the modkit branch and version as needed)
 2. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
