@@ -34,7 +34,7 @@ namespace Eco.Mods.CivicsImpExp
     [ChatCommandHandler]
     public static class CivicsImpExpCommands
     {
-        private static IReadOnlyDictionary<string, Type> civicKeyToType = new Dictionary<string, Type>
+        private static readonly IReadOnlyDictionary<string, Type> civicKeyToType = new Dictionary<string, Type>
         {
             {"law",             typeof(Law) },
             {"electionprocess", typeof(ElectionProcess) },
@@ -47,7 +47,12 @@ namespace Eco.Mods.CivicsImpExp
             {"govaccount",      typeof(GovernmentBankAccount) },
         };
 
-        private static IReadOnlyDictionary<string, ProposableState> stateNamesToStates = new Dictionary<string, ProposableState>
+        private static readonly IReadOnlyDictionary<Type, string> typeToCivicKey = new Dictionary<Type, string>(
+            civicKeyToType
+                .Select(pair => new KeyValuePair<Type, string>(pair.Value, pair.Key))
+        );
+
+        private static readonly IReadOnlyDictionary<string, ProposableState> stateNamesToStates = new Dictionary<string, ProposableState>
         {
             {"draft", ProposableState.Draft },
             {"proposed", ProposableState.Proposed },
@@ -55,28 +60,26 @@ namespace Eco.Mods.CivicsImpExp
             {"removed", ProposableState.Removed },
         };
 
-        private static bool TryGetRegistrarForCivicKey(IChatClient chatClient, string civicKey, out Type civicType, out IRegistrar registrar)
+        private static bool TryGetTypeForCivicKey(IChatClient chatClient, string civicKey, out Type civicType)
         {
-            if (civicKeyToType.TryGetValue(civicKey, out civicType))
-            {
-                registrar = Registrars.GetByDerivedType(civicType);
-                return true;
-            }
+            if (civicKeyToType.TryGetValue(civicKey, out civicType)) { return true; }
             chatClient.Msg(new LocString($"Unknown civic key '{civicKey}' (expecting one of {string.Join(", ", civicKeyToType.Keys.Select(type => $"'{type}'"))})"));
-            registrar = null;
             return false;
         }
 
         #region Exporting
 
         [ChatSubCommand("Civics", "Exports a civic object to a json file.", ChatAuthorizationLevel.Admin)]
-        public static async Task Export(IChatClient chatClient, string civicKey, int id)
+        public static async Task Export(IChatClient chatClient, int id)
         {
-            if (!TryGetRegistrarForCivicKey(chatClient, civicKey, out var civicType, out var registrar)) { return; }
-            var obj = registrar.GetById(id);
-            if (obj == null || !civicType.IsAssignableFrom(obj.GetType()))
+            if (!UniversalIDs.TryGetByID(id, out IHasUniversalID obj) || obj == null)
             {
-                chatClient.Msg(new LocString($"Failed to export {civicKey}: none found by id {id}"));
+                chatClient.Msg(new LocString($"Failed to export object: none found by id {id}"));
+                return;
+            }
+            if (!typeToCivicKey.TryGetValue(obj.GetType(), out var civicKey))
+            {
+                chatClient.Msg(new LocString($"Failed to export object: type {obj.GetType().Name} not supported by exporter"));
                 return;
             }
             string outPath = Path.Combine("civics", $"{civicKey}-{id}.json");
@@ -95,9 +98,9 @@ namespace Eco.Mods.CivicsImpExp
 
         private static async Task<(int successCount, int failCount)> ExportAllOfInternal(IChatClient chatClient, string civicKey, ProposableState? stateFilter)
         {
-            if (!TryGetRegistrarForCivicKey(chatClient, civicKey, out var civicType, out var registrar)) { return (0, 0); }
+            if (!TryGetTypeForCivicKey(chatClient, civicKey, out var civicType)) { return (0, 0); }
             int successCount = 0, failCount = 0;
-            foreach (var obj in registrar.All())
+            foreach (var obj in Registrars.GetByDerivedType(civicType).All())
             {
                 if (!civicType.IsAssignableFrom(obj.GetType())) { continue; }
                 if (stateFilter != null && obj is IProposable proposable && proposable.State != stateFilter.Value) { continue; }
@@ -303,10 +306,10 @@ namespace Eco.Mods.CivicsImpExp
             // Slot each civic into the relevant world object
             int numCivics = 0;
             IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = new Dictionary<CivicObjectComponent, int>();
-            foreach (var obj in importedObjects.Where((obj) => obj is IProposable && !(obj is IParentedEntry)))
+            foreach (var obj in importedObjects.Where((obj) => obj is IProposable && obj is not IParentedEntry))
             {
-                var player = chatClient is User user ? user.Player : null;
-                var worldObject = FindFreeWorldObjectForCivic(obj.GetType(), usedSlotsModifierDict, player?.Position);
+                var user = chatClient as User;
+                var worldObject = FindFreeWorldObjectForCivic(obj.GetType(), usedSlotsModifierDict, user?.Position);
                 if (worldObject == null)
                 {
                     // This should never happen as we already checked above for free slots and early'd out, but just in case...
