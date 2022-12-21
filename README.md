@@ -130,14 +130,14 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 2. Extract the modkit and copy the dlls from `ReferenceAssemblies` to `eco-dlls` in the root directory (create the folder if it doesn't exist)
 3. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019/2022
 4. Build the `EcoCivicsImportExportMod` project in Visual Studio
-5. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\net6.0`
+5. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\net7.0`
 
 ### Linux
-1. Run `ECO_BRANCH="release" MODKIT_VERSION="0.9.7.3-beta" fetch-eco-reference-assemblies.sh` (change the modkit branch and version as needed)
+1. Run `ECO_BRANCH="release" MODKIT_VERSION="0.9.7.5-beta" fetch-eco-reference-assemblies.sh` (change the modkit branch and version as needed)
 2. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
-3. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/net6.0`
+3. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/net7.0`
 
 ## Building Bundler Tool from Source
 
