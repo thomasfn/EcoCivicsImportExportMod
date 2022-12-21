@@ -19,7 +19,7 @@ namespace Eco.Mods.CivicsImpExp.Migrations
                 .Select(t => Activator.CreateInstance(t) as ICivicsImpExpMigratorV1);
 
         private static IEnumerable<ICivicsImpExpMigratorV1> ExternalMigrators
-            => ReflectionUtils
+            => ReflectionCache
                 .GetGameAssemblies()
                 .SelectMany(a => a.GetTypes())
                 .Where(t => t.GetInterface("ICivicsImpExpMigratorV1") != null && !t.IsAssignableTo(typeof(ICivicsImpExpMigratorV1)))
