@@ -320,7 +320,7 @@ namespace Eco.Mods.CivicsImpExp
                 }
                 var civicObjectComponent = worldObject.GetComponent<CivicObjectComponent>();
                 var proposable = obj as IProposable;
-                proposable.SetHostObject(worldObject);
+                proposable.AssignHostObject(worldObject);
                 if (usedSlotsModifierDict.TryGetValue(civicObjectComponent, out int currentModifier))
                 {
                     usedSlotsModifierDict[civicObjectComponent] = currentModifier + 1;
