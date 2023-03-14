@@ -24,6 +24,7 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Civics.Constitutional;
     using Gameplay.Civics.Districts;
     using Gameplay.Civics.Misc;
+    using Gameplay.Civics.Immigration;
     using Gameplay.Objects;
     using Gameplay.Components;
     using Gameplay.Economy;
@@ -36,15 +37,17 @@ namespace Eco.Mods.CivicsImpExp
     {
         private static readonly IReadOnlyDictionary<string, Type> civicKeyToType = new Dictionary<string, Type>
         {
-            {"law",             typeof(Law) },
-            {"electionprocess", typeof(ElectionProcess) },
-            {"electedtitle",    typeof(ElectedTitle) },
-            {"appointedtitle",  typeof(AppointedTitle) },
-            {"demographic",     typeof(Demographic) },
-            {"constitution",    typeof(Constitution) },
-            {"amendment",       typeof(ConstitutionalAmendment) },
-            {"districtmap",     typeof(DistrictMap) },
-            {"govaccount",      typeof(GovernmentBankAccount) },
+            {"law",                 typeof(Law) },
+            {"electionprocess",     typeof(ElectionProcess) },
+            {"electedtitle",        typeof(ElectedTitle) },
+            {"appointedtitle",      typeof(AppointedTitle) },
+            {"demographic",         typeof(Demographic) },
+            {"constitution",        typeof(Constitution) },
+            {"amendment",           typeof(ConstitutionalAmendment) },
+            {"districtmap",         typeof(DistrictMap) },
+            {"govaccount",          typeof(GovernmentBankAccount) },
+            {"settlement",          typeof(Settlement) },
+            {"immigrationpolicy",   typeof(ImmigrationPolicy) },
         };
 
         private static readonly IReadOnlyDictionary<Type, string> typeToCivicKey = new Dictionary<Type, string>(
