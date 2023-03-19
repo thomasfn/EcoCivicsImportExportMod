@@ -27,6 +27,7 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Economy.Money;
     using Gameplay.Economy;
     using Gameplay.Settlements;
+    using Eco.Gameplay.Aliases;
 
     public class ImportContext
     {
@@ -44,17 +45,16 @@ namespace Eco.Mods.CivicsImpExp
 
         public void Import(BundledCivic bundledCivic, Settlement settlement)
         {
-            IHasID obj;
-            if (!ReferenceMap.TryGetValue(bundledCivic.AsReference, out obj))
+            if (!ReferenceMap.TryGetValue(bundledCivic.AsReference, out IHasID obj))
             {
                 obj = ImportStub(bundledCivic);
             }
             if (obj is IProposable proposable)
             {
-                proposable.Settlement = settlement;
-                proposable.InitializeDraftProposable();
+                if (obj is not Settlement) { proposable.Settlement = settlement; }
+                if (proposable.State == ProposableState.Uninitialized) { proposable.InitializeDraftProposable(); }
                 DeserialiseGenericObject(bundledCivic.Data, obj);
-                proposable.SetProposedState(ProposableState.Draft, true, true);
+                proposable.SetProposedState(proposable.State == ProposableState.Uninitialized ? ProposableState.Draft : proposable.State, true, true);
             }
             else
             {
@@ -139,14 +139,14 @@ namespace Eco.Mods.CivicsImpExp
             {
                 JObject obj = token.ToObject<JObject>();
                 string typeName = obj.Value<string>("type");
-                switch (typeName)
+                return typeName switch
                 {
-                    case "Type": return ResolveType(obj.Value<string>("value"));
-                    case "GameValueContext": return DeserialiseGameValueContext(obj, expectedType);
-                    case "GameValueWrapper": return DeserialiseGameValueWrapper(obj, expectedType);
-                    case "GamePickerList": return DeserialiseGamePickerList(obj, expectedType);
-                    default: return DeserialiseGenericObject(obj, expectedType);
-                }
+                    "Type" => ResolveType(obj.Value<string>("value")),
+                    "GameValueContext" => DeserialiseGameValueContext(obj, expectedType),
+                    "GameValueWrapper" => DeserialiseGameValueWrapper(obj, expectedType),
+                    "GamePickerList" => DeserialiseGamePickerList(obj, expectedType),
+                    _ => DeserialiseGenericObject(obj, expectedType),
+                };
             }
             else if (token.Type == JTokenType.Array)
             {
@@ -412,10 +412,23 @@ namespace Eco.Mods.CivicsImpExp
             else if (expectedType.IsAssignableFrom(typeof(GamePickerList)))
             {
                 gamePickerList = new GamePickerList();
-                JObject mustDeriveType = obj.Value<JObject>("mustDeriveType");
-                if (mustDeriveType != null)
+                JObject mustDeriveTypeToken = obj.Value<JObject>("mustDeriveType");
+                if (mustDeriveTypeToken != null)
                 {
-                    gamePickerList.MustDeriveType = DeserialiseValueAsType(mustDeriveType, typeof(Type)) as Type;
+                    gamePickerList.MustDeriveType = DeserialiseValueAsType(mustDeriveTypeToken, typeof(Type)) as Type;
+                }
+            }
+            else if (expectedType.IsAssignableFrom(typeof(GamePickerListAlias)))
+            {
+                gamePickerList = new GamePickerListAlias();
+                JObject mustDeriveTypeToken = obj.Value<JObject>("mustDeriveType");
+                if (mustDeriveTypeToken != null)
+                {
+                    var mustDeriveType = DeserialiseValueAsType(mustDeriveTypeToken, typeof(Type)) as Type;
+                    if (mustDeriveType != typeof(IAlias))
+                    {
+                        throw new InvalidOperationException($"Can't deserialise a GamePickerList with mustDeriveType of '{mustDeriveType.FullName}' into a '{expectedType.FullName}'");
+                    }
                 }
             }
             else

@@ -62,7 +62,7 @@ namespace Eco.Mods.CivicsImpExp
             }
         }
 
-        public CivicReference AsReference { get => new CivicReference(Type, Name); }
+        public CivicReference AsReference { get => new(Type, Name); }
 
         public IEnumerable<CivicReference> References
         {
@@ -128,6 +128,58 @@ namespace Eco.Mods.CivicsImpExp
             registrar.Insert(obj);
             return obj;
         }
+
+        public bool Is<T>() where T : IHasID
+        {
+            return typeof(T).IsAssignableFrom(Type);
+        }
+    }
+
+    public readonly struct BundledSettlementCivic
+    {
+        public readonly BundledCivic BundledCivic;
+
+        public string Name { get => BundledCivic.Name; }
+
+        public string TypeName { get => BundledCivic.TypeName; }
+
+        public Type Type { get => BundledCivic.Type; }
+
+        public CivicReference AsReference { get => BundledCivic.AsReference; }
+
+        public IEnumerable<CivicReference> References { get => BundledCivic.References; }
+
+        public IEnumerable<BundledCivic> InlineObjects { get => BundledCivic.InlineObjects; }
+
+        public CivicReference? LeaderReference { get => GetReferenceProperty(nameof(Settlement.Leader)); }
+
+        public CivicReference? ImmigrationPolicyReference { get => GetReferenceProperty(nameof(Settlement.ImmigrationPolicy)); }
+
+        public CivicReference? ElectionProcessReference { get => GetReferenceProperty(nameof(Settlement.ElectionProcess)); }
+
+        public CivicReference? ConstitutionReference { get => GetReferenceProperty(nameof(Settlement.Constitution)); }
+
+        public CivicReference? CitizenDemographicReference { get => GetReferenceProperty(nameof(Settlement.CitizenDemographic)); }
+
+        public BundledSettlementCivic(BundledCivic bundledCivic)
+        {
+            BundledCivic = bundledCivic;
+        }
+
+        private CivicReference? GetReferenceProperty(string key)
+        {
+            var propertiesToken = BundledCivic.Data["properties"];
+            if (propertiesToken is not JObject propertiesObj) { return null; }
+            var referenceToken = propertiesObj[key];
+            if (referenceToken is not JObject referenceObj) { return null; }
+            string name = referenceObj.Value<string>("name");
+            string typeName = referenceObj.Value<string>("type");
+            bool isRef = referenceObj.Value<bool>("reference");
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(typeName) || !isRef) { return null; }
+            var type = ReflectionUtils.GetTypeFromFullName(typeName);
+            if (type == null) { return null; }
+            return new CivicReference(type, name);
+        }
     }
 
     public class CivicBundle
@@ -143,7 +195,7 @@ namespace Eco.Mods.CivicsImpExp
             //int verMin = versionArr.Value<int>(1);
             if (verMaj != CivicsJsonConverter.MajorVersion)
             {
-                throw new InvalidOperationException($"Civic format not supported (found major '{verMaj}', expecting '{CivicsJsonConverter.MajorVersion}'");
+                throw new InvalidOperationException($"Civic format not supported (found major '{verMaj}', expecting '{CivicsJsonConverter.MajorVersion}')");
             }
             if (typeName == typeof(CivicBundle).FullName)
             {
@@ -178,6 +230,30 @@ namespace Eco.Mods.CivicsImpExp
 
         public IEnumerable<CivicReference> ExternalReferences { get => AllReferences.Where(r => !ReferenceIsLocal(r)); }
 
+        public bool ContainsSettlement { get => Civics.Any(c => c.Is<Settlement>()); }
+
+        public BundledCivic? Settlement { get => Civics.SingleOrDefault(c => c.Is<Settlement>()); }
+
+        public IReadOnlyDictionary<CivicReference, IHasID> GetSettlementOverwriteCivics(Settlement targetSettlement)
+        {
+            var dict = new Dictionary<CivicReference, IHasID>();
+            var importSettlementCivicRaw = Settlement;
+            if (importSettlementCivicRaw == null) { return dict; }
+            var importSettlementCivic = new BundledSettlementCivic(importSettlementCivicRaw.Value);
+            dict.Add(importSettlementCivic.AsReference, targetSettlement);
+            var leaderRef = importSettlementCivic.LeaderReference;
+            if (leaderRef != null && targetSettlement.Leader != null && Civics.Any(c => c.AsReference == leaderRef)) { dict.Add(leaderRef.Value, targetSettlement.Leader); }
+            var immigrationPolicyRef = importSettlementCivic.ImmigrationPolicyReference;
+            if (immigrationPolicyRef != null && targetSettlement.ImmigrationPolicy != null && Civics.Any(c => c.AsReference == immigrationPolicyRef)) { dict.Add(immigrationPolicyRef.Value, targetSettlement.ImmigrationPolicy); }
+            var electionProcessRef = importSettlementCivic.ElectionProcessReference;
+            if (electionProcessRef != null && targetSettlement.ElectionProcess != null && Civics.Any(c => c.AsReference == electionProcessRef)) { dict.Add(electionProcessRef.Value, targetSettlement.ElectionProcess); }
+            var constitutionRef = importSettlementCivic.ConstitutionReference;
+            if (constitutionRef != null && targetSettlement.Constitution != null && Civics.Any(c => c.AsReference == constitutionRef)) { dict.Add(constitutionRef.Value, targetSettlement.Constitution); }
+            var citizenDemographicRef = importSettlementCivic.CitizenDemographicReference;
+            if (citizenDemographicRef != null && targetSettlement.CitizenDemographic != null && Civics.Any(c => c.AsReference == citizenDemographicRef)) { dict.Add(citizenDemographicRef.Value, targetSettlement.CitizenDemographic); }
+            return dict;
+        }
+
         public bool ReferenceIsLocal(CivicReference reference)
             => Civics.Select(c => c.AsReference).Contains(reference)
             || AllInlineObjects.Select(c => c.AsReference).Contains(reference);
@@ -197,13 +273,24 @@ namespace Eco.Mods.CivicsImpExp
             return migrationReport;
         }
 
-        public IEnumerable<IHasID> ImportAll(Settlement settlement)
+        public IEnumerable<IHasID> ImportAll(Settlement targetSettlement)
         {
             var importContext = new ImportContext();
+            var importSettlementCivic = Settlement;
+            if (importSettlementCivic != null)
+            {
+                var settlementOverwriteCivics = GetSettlementOverwriteCivics(targetSettlement);
+                foreach (var pair in settlementOverwriteCivics)
+                {
+                    importContext.ReferenceMap.Add(pair);
+                }
+                importContext.ImportedObjects.AddUniqueRange(settlementOverwriteCivics.Values);
+            }
             try
             {
                 foreach (var civic in Civics)
                 {
+                    if (importContext.ReferenceMap.ContainsKey(civic.AsReference)) { continue; }
                     try
                     {
                         importContext.ImportStub(civic);
@@ -222,7 +309,7 @@ namespace Eco.Mods.CivicsImpExp
                 {
                     try
                     {
-                        importContext.Import(civic, settlement);
+                        importContext.Import(civic, targetSettlement);
                     }
                     catch (Exception ex)
                     {
