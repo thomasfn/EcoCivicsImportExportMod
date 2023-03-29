@@ -9,7 +9,7 @@ jobs:
   build-mod:
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.10.0.0-beta-develop-844
+      MODKIT_VERSION: 0.10.0.0-beta-develop-859
       ECO_BRANCH: release
     steps:
     - uses: actions/checkout@v2
