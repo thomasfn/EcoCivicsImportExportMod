@@ -7,7 +7,10 @@ using Newtonsoft.Json.Linq;
 namespace Eco.Mods.CivicsImpExp
 {
     using Core.Systems;
+
+    using Gameplay.Civics;
     using Gameplay.Settlements;
+
     using Shared.Utils;
 
     public readonly struct CivicReference : IEquatable<CivicReference>
@@ -232,7 +235,9 @@ namespace Eco.Mods.CivicsImpExp
 
         public bool ContainsSettlement { get => Civics.Any(c => c.Is<Settlement>()); }
 
-        public BundledCivic? Settlement { get => Civics.SingleOrDefault(c => c.Is<Settlement>()); }
+        public BundledCivic? Settlement { get => Civics.Select(c => new BundledCivic?(c)).SingleOrDefault(c => c.Value.Is<Settlement>()); }
+
+        public BundledCivic? Constitution { get => Civics.Select(c => new BundledCivic?(c)).SingleOrDefault(c => c.Value.Is<Constitution>()); }
 
         public IReadOnlyDictionary<CivicReference, IHasID> GetSettlementOverwriteCivics(Settlement targetSettlement)
         {

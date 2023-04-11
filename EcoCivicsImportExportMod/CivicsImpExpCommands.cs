@@ -256,15 +256,29 @@ namespace Eco.Mods.CivicsImpExp
 
             // Determine settlement state
             var bundleSettlementCount = bundle.Civics.Count(c => c.Is<Settlement>());
+            var bundleConstitutionCount = bundle.Civics.Count(c => c.Is<Constitution>());
             if (bundleSettlementCount > 1)
             {
                 chatClient.Msg(Localizer.DoStr("Bundle contains more than 1 settlement, this is not allowed!"));
                 return;
             }
-            if (!FeatureConfig.Obj.SettlementSystemEnabled && bundleSettlementCount > 0)
+            if (bundleConstitutionCount > 1)
             {
-                chatClient.Msg(Localizer.DoStr("Bundle is not importable as it contains a settlement and the settlement system is not enabled."));
+                chatClient.Msg(Localizer.DoStr("Bundle contains more than 1 constitution, this is not allowed!"));
                 return;
+            }
+            if (!FeatureConfig.Obj.SettlementSystemEnabled)
+            {
+                if (bundleSettlementCount > 0)
+                {
+                    chatClient.Msg(Localizer.DoStr("Bundle is not importable as it contains a settlement and the settlement system is not enabled."));
+                    return;
+                }
+                if (bundleConstitutionCount > 0)
+                {
+                    chatClient.Msg(Localizer.DoStr("Bundle is not importable as it contains a constitution and the settlement system is not enabled."));
+                    return;
+                }
             }
 
             // Fetch settlement overwrite civics
@@ -336,15 +350,14 @@ namespace Eco.Mods.CivicsImpExp
             var importReport = new List<string>();
             foreach (var obj in importedObjects.Where((obj) => obj is not IProposable && obj is not IParentedEntry))
             {
-                var linkable = obj as ILinkable;
-                if (linkable == null) { continue; }
+                if (obj is not ILinkable linkable) { continue; }
                 importReport.Add(linkable.UILink());
             }
             if (importReport.Count > 0)
             {
                 chatClient.Msg(Localizer.Do($"Imported {string.Join(", ", importReport)} from '{source}'"));
             }
-            if (!settlementCivicRefs.Any())
+            if (settlementCivicRefs.Any())
             {
                 chatClient.Msg(Localizer.DoStr($"This operation is not undoable."));
             }
@@ -377,7 +390,7 @@ namespace Eco.Mods.CivicsImpExp
                     return;
                 }
                 var civicObjectComponent = worldObject.GetComponent<CivicObjectComponent>();
-                
+
                 proposable.AssignHostObject(worldObject);
                 if (usedSlotsModifierDict.TryGetValue(civicObjectComponent, out int currentModifier))
                 {
