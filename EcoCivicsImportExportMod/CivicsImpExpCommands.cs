@@ -333,7 +333,7 @@ namespace Eco.Mods.CivicsImpExp
             IEnumerable<IHasID> importedObjects;
             try
             {
-                importedObjects = bundle.ImportAll(targetSettlement);
+                importedObjects = bundle.ImportAll(targetSettlement, chatClient as User);
             }
             catch (Exception ex)
             {
@@ -542,5 +542,42 @@ namespace Eco.Mods.CivicsImpExp
         }
 
         #endregion
+
+        [ChatSubCommand("Civics", "Fixes all non-removed civics with missing creators.", ChatAuthorizationLevel.Admin)]
+        public static void FixMissingCreators(IChatClient chatClient)
+        {
+            if (chatClient is not User user)
+            {
+                chatClient.Msg(Localizer.Do($"Must be a valid user, RCON is not supported"));
+                return;
+            }
+            IList<(Type, int)> fixCounts = new List<(Type, int)>();
+            foreach (var civicType in typeToCivicKey.Keys)
+            {
+                var registrar = Registrars.GetByDerivedType(civicType);
+                int localNumFixed = 0;
+                foreach (var civicObj in registrar.All())
+                {
+                    if (civicObj is not IProposable proposable) { continue; }
+                    if (proposable.State == ProposableState.Uninitialized || proposable.State == ProposableState.Removed) { continue; }
+                    if (proposable.Creator == null)
+                    {
+                        proposable.Creator = user;
+                        ++localNumFixed;
+                    }
+                }
+                if (localNumFixed > 0)
+                {
+                    registrar.Save();
+                    fixCounts.Add((civicType, localNumFixed));
+                }
+            }
+            if (fixCounts.Count == 0)
+            {
+                chatClient.Msg(Localizer.Do($"No civics with missing creators were found"));
+                return;
+            }
+            chatClient.Msg(Localizer.Do($"Found the following civics and corrected their owner to {user.MarkedUpName}: {string.Join(", ", fixCounts.Select(x => $"{x.Item2} of {x.Item1.Name}"))}"));
+        }
     }
 }

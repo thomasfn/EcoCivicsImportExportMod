@@ -27,7 +27,8 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Economy.Money;
     using Gameplay.Economy;
     using Gameplay.Settlements;
-    using Eco.Gameplay.Aliases;
+    using Gameplay.Aliases;
+    using Gameplay.Players;
 
     public class ImportContext
     {
@@ -43,7 +44,7 @@ namespace Eco.Mods.CivicsImpExp
             return obj;
         }
 
-        public void Import(BundledCivic bundledCivic, Settlement settlement)
+        public void Import(BundledCivic bundledCivic, Settlement settlement, User importer)
         {
             if (!ReferenceMap.TryGetValue(bundledCivic.AsReference, out IHasID obj))
             {
@@ -52,6 +53,7 @@ namespace Eco.Mods.CivicsImpExp
             if (obj is IProposable proposable)
             {
                 if (obj is not Settlement) { proposable.Settlement = settlement; }
+                proposable.Creator = importer;
                 if (proposable.State == ProposableState.Uninitialized) { proposable.InitializeDraftProposable(); }
                 DeserialiseGenericObject(bundledCivic.Data, obj);
                 proposable.SetProposedState(proposable.State == ProposableState.Uninitialized ? ProposableState.Draft : proposable.State, true, true);

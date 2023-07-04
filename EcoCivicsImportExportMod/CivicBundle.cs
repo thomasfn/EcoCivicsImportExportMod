@@ -8,6 +8,7 @@ namespace Eco.Mods.CivicsImpExp
 {
     using Core.Systems;
 
+    using Gameplay.Players;
     using Gameplay.Civics;
     using Gameplay.Settlements;
 
@@ -278,7 +279,7 @@ namespace Eco.Mods.CivicsImpExp
             return migrationReport;
         }
 
-        public IEnumerable<IHasID> ImportAll(Settlement targetSettlement)
+        public IEnumerable<IHasID> ImportAll(Settlement targetSettlement, User importer)
         {
             var importContext = new ImportContext();
             var importSettlementCivic = Settlement;
@@ -298,7 +299,7 @@ namespace Eco.Mods.CivicsImpExp
                     if (importContext.ReferenceMap.ContainsKey(civic.AsReference)) { continue; }
                     try
                     {
-                        importContext.ImportStub(civic);
+                        IHasID stub = importContext.ImportStub(civic);
                         foreach (var inlineCivic in civic.InlineObjects)
                         {
                             importContext.ImportStub(inlineCivic);
@@ -314,7 +315,7 @@ namespace Eco.Mods.CivicsImpExp
                 {
                     try
                     {
-                        importContext.Import(civic, targetSettlement);
+                        importContext.Import(civic, targetSettlement, importer);
                     }
                     catch (Exception ex)
                     {
