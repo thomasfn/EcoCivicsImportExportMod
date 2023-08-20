@@ -1,8 +1,5 @@
 ﻿using System;
-using System.IO;
 using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Net;
 using System.Collections.Generic;
 
 using Newtonsoft.Json.Linq;
@@ -57,6 +54,12 @@ namespace Eco.Mods.CivicsImpExp
                 if (proposable.State == ProposableState.Uninitialized) { proposable.InitializeDraftProposable(); }
                 DeserialiseGenericObject(bundledCivic.Data, obj);
                 proposable.SetProposedState(proposable.State == ProposableState.Uninitialized ? ProposableState.Draft : proposable.State, true, true);
+            }
+            else if (obj is BankAccount bankAccount)
+            {
+                bankAccount.Creator = importer;
+                bankAccount.Settlement = settlement;
+                DeserialiseGenericObject(bundledCivic.Data, obj);
             }
             else
             {
