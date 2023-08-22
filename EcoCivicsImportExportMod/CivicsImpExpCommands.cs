@@ -206,22 +206,42 @@ namespace Eco.Mods.CivicsImpExp
         private static WorldObject FindFreeWorldObjectForCivic(Type civicType, Settlement settlement, IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = null, Vector3? nearestTo = null)
         {
             var worldObjectManager = ServiceHolder<IWorldObjectManager>.Obj;
-            var relevantWorldObjects = worldObjectManager.All
-                .Where((worldObject) => worldObject.HasComponent<CivicObjectComponent>())
-                .Select((worldObject) => (worldObject, worldObject.GetComponent<CivicObjectComponent>()))
-                .Where((worldObjectAndComp) => worldObjectAndComp.Item2.ObjectType.IsAssignableFrom(civicType) && worldObjectAndComp.Item2.Settlement == settlement)
-                .Where((worldObjectAndComp) => GetUsedSlotsCount(worldObjectAndComp.Item2, usedSlotsModifierDict) < worldObjectAndComp.Item2.MaxCount);
-            if (nearestTo != null)
+            if (civicType.IsAssignableTo(typeof(BankAccount)))
             {
-                relevantWorldObjects = relevantWorldObjects
-                    .OrderBy((worldObjectAndComp) => World.WrappedDistance(worldObjectAndComp.worldObject.Position, nearestTo.Value));
+                var relevantWorldObjects = worldObjectManager.All
+                    .Where((worldObject) => worldObject.HasComponent<BankComponent>())
+                    .Select((worldObject) => (worldObject, worldObject.GetComponent<BankComponent>()))
+                    .Where((worldObjectAndComp) => worldObjectAndComp.Item2.Settlement == settlement);
+                if (nearestTo != null)
+                {
+                    relevantWorldObjects = relevantWorldObjects
+                        .OrderBy((worldObjectAndComp) => World.WrappedDistance(worldObjectAndComp.worldObject.Position, nearestTo.Value));
+                }
+                return relevantWorldObjects.FirstOrDefault().worldObject;
             }
-            return relevantWorldObjects.FirstOrDefault().worldObject;
+            else
+            {
+                var relevantWorldObjects = worldObjectManager.All
+                    .Where((worldObject) => worldObject.HasComponent<CivicObjectComponent>())
+                    .Select((worldObject) => (worldObject, worldObject.GetComponent<CivicObjectComponent>()))
+                    .Where((worldObjectAndComp) => worldObjectAndComp.Item2.ObjectType.IsAssignableFrom(civicType) && worldObjectAndComp.Item2.Settlement == settlement)
+                    .Where((worldObjectAndComp) => GetUsedSlotsCount(worldObjectAndComp.Item2, usedSlotsModifierDict) < worldObjectAndComp.Item2.MaxCount);
+                if (nearestTo != null)
+                {
+                    relevantWorldObjects = relevantWorldObjects
+                        .OrderBy((worldObjectAndComp) => World.WrappedDistance(worldObjectAndComp.worldObject.Position, nearestTo.Value));
+                }
+                return relevantWorldObjects.FirstOrDefault().worldObject;
+            }
         }
 
         private static int CountFreeSlotsForCivic(Type civicType, Settlement settlement)
         {
             var worldObjectManager = ServiceHolder<IWorldObjectManager>.Obj;
+            if (civicType.IsAssignableTo(typeof(BankAccount)))
+            {
+                return worldObjectManager.All.Any((worldObject) => worldObject.TryGetComponent<BankComponent>(out var bankComponent) && bankComponent.Settlement == settlement) ? int.MaxValue : 0;
+            }
             return worldObjectManager.All
                 .Where((worldObject) => worldObject.HasComponent<CivicObjectComponent>())
                 .Select((worldObject) => (worldObject, worldObject.GetComponent<CivicObjectComponent>()))
@@ -300,7 +320,7 @@ namespace Eco.Mods.CivicsImpExp
             var bundledCivicsByType = bundle.Civics
                 .Where((bundledCivic) => !settlementCivicRefs.Contains(bundledCivic.AsReference))
                 .GroupBy((bundledCivic) => bundledCivic.Type)
-                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key));
+                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key) || typeof(BankAccount).IsAssignableFrom(grouping.Key));
             foreach (var grouping in bundledCivicsByType)
             {
                 var freeSlots = CountFreeSlotsForCivic(grouping.Key, targetSettlement);
@@ -402,6 +422,21 @@ namespace Eco.Mods.CivicsImpExp
                 }
                 chatClient.Msg(Localizer.Do($"Imported {proposable.UILink()} from '{source}' onto {worldObject.UILink()}"));
             }
+            foreach (var bankAccount in importedObjects.OfType<BankAccount>())
+            {
+                var user = chatClient as User;
+                var worldObject = FindFreeWorldObjectForCivic(bankAccount.GetType(), targetSettlement, usedSlotsModifierDict, user?.Position);
+                if (worldObject == null)
+                {
+                    // This should never happen as we already checked above for free slots and early'd out, but just in case...
+                    if (!settlementCivicRefs.Any()) { Importer.Cleanup(importedObjects); }
+                    chatClient.Msg(Localizer.Do($"Failed to import bank account of type '{bankAccount.GetType().Name}': no banks found to host the bank account"));
+                    CivicsImpExpPlugin.Obj.LastImport.Clear();
+                    return;
+                }
+                bankAccount.AssignHostObject(worldObject);
+                chatClient.Msg(Localizer.Do($"Imported {bankAccount.UILink()} from '{source}' onto {worldObject.UILink()}"));
+            }
 
             // Sanity check
             if (importProposableCount == 0 && importReport.Count == 0)
@@ -481,7 +516,7 @@ namespace Eco.Mods.CivicsImpExp
             var bundledCivicsByType = bundle.Civics
                 .Where((bundledCivic) => !settlementCivics.Contains(bundledCivic.AsReference))
                 .GroupBy((bundledCivic) => bundledCivic.Type)
-                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key));
+                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key) || typeof(BankAccount).IsAssignableFrom(grouping.Key));
             foreach (var grouping in bundledCivicsByType)
             {
                 var freeSlots = CountFreeSlotsForCivic(grouping.Key, targetSettlement);
