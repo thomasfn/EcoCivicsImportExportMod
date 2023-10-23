@@ -9,8 +9,8 @@ jobs:
   build-mod:
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.10.0.0-beta-staging-2746
-      ECO_BRANCH: staging
+      MODKIT_VERSION: 0.10.0.0-beta-playtest-195
+      ECO_BRANCH: playtest
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core 7.0
