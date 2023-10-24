@@ -351,7 +351,7 @@ namespace Eco.Mods.CivicsImpExp
 
         private void DeserialiseControllerListOrHashSet(object target, JArray token)
         {
-            Type innerElementType = target.GetType().GetGenericArguments()[0];
+            Type innerElementType = target is IClientControlledContainer clientControlledContainer ? clientControlledContainer.Type : target.GetType().GetGenericArguments()[0];
             target.GetType().GetMethod("Clear", BindingFlags.Public | BindingFlags.Instance).Invoke(target, null);
             var addMethod = target.GetType().GetMethod("Add", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { innerElementType }, null);
             foreach (var element in token)
