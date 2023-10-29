@@ -26,6 +26,7 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Settlements;
     using Gameplay.Aliases;
     using Gameplay.Players;
+    using Eco.Gameplay.Placement;
 
     public class ImportContext
     {
@@ -47,19 +48,13 @@ namespace Eco.Mods.CivicsImpExp
             {
                 obj = ImportStub(bundledCivic);
             }
+            if (obj is ISettlementAssociated settlementAssociated) { settlementAssociated.Settlement = settlement; }
+            if (obj is IHostedObject hostedObject) { hostedObject.Creator = importer; }
             if (obj is IProposable proposable)
             {
-                if (obj is not Settlement) { proposable.Settlement = settlement; }
-                proposable.Creator = importer;
                 if (proposable.State == ProposableState.Uninitialized) { proposable.InitializeDraftProposable(); }
                 DeserialiseGenericObject(bundledCivic.Data, obj);
                 proposable.SetProposedState(proposable.State == ProposableState.Uninitialized ? ProposableState.Draft : proposable.State, true, true);
-            }
-            else if (obj is BankAccount bankAccount)
-            {
-                bankAccount.Creator = importer;
-                bankAccount.Settlement = settlement;
-                DeserialiseGenericObject(bundledCivic.Data, obj);
             }
             else
             {
