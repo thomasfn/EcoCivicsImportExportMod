@@ -298,7 +298,7 @@ namespace Eco.Mods.CivicsImpExp
             var bundledCivicsByType = bundle.Civics
                 .Where((bundledCivic) => !settlementCivicRefs.Contains(bundledCivic.AsReference))
                 .GroupBy((bundledCivic) => bundledCivic.Type)
-                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key) || typeof(BankAccount).IsAssignableFrom(grouping.Key));
+                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key));
             foreach (var grouping in bundledCivicsByType)
             {
                 var freeSlots = CountFreeSlotsForCivic(grouping.Key, targetSettlement);
@@ -479,7 +479,7 @@ namespace Eco.Mods.CivicsImpExp
             var bundledCivicsByType = bundle.Civics
                 .Where((bundledCivic) => !settlementCivics.Contains(bundledCivic.AsReference))
                 .GroupBy((bundledCivic) => bundledCivic.Type)
-                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key) || typeof(BankAccount).IsAssignableFrom(grouping.Key));
+                .Where((grouping) => typeof(IProposable).IsAssignableFrom(grouping.Key));
             foreach (var grouping in bundledCivicsByType)
             {
                 var freeSlots = CountFreeSlotsForCivic(grouping.Key, targetSettlement);
