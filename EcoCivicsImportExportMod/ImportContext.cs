@@ -206,6 +206,10 @@ namespace Eco.Mods.CivicsImpExp
         {
             string typeName = obj.Value<string>("type");
             Type type = ResolveType(typeName);
+            if (type == null)
+            {
+                throw new InvalidOperationException($"Failed to resolve type '{typeName}'");
+            }
             if (typeof(TriggerConfig).IsAssignableFrom(type))
             {
                 return DeserialiseTriggerConfig(obj, type, expectedType);

@@ -18,29 +18,7 @@ namespace Eco.Mods.CivicsImpExp.Migrations._0950
                 .Any(x => !string.IsNullOrEmpty(x.Value<string>("contextName")) || !string.IsNullOrEmpty(x.Value<string>("titleBacking")) || !string.IsNullOrEmpty(x.Value<string>("tooltip")));
 
         private IEnumerable<JObject> GetGameValueContexts(JObject obj)
-            => GetNestedObjects(obj).Where(x => x.Value<string>("type") == "GameValueContext");
-
-        private IEnumerable<JObject> GetNestedObjects(JObject obj)
-        {
-            foreach (var pair in obj)
-            {
-                if (pair.Value is JObject innerObj)
-                {
-                    yield return innerObj;
-                    foreach (var x in GetNestedObjects(innerObj)) { yield return x; }
-                }
-                else if (pair.Value is JArray innerArr)
-                {
-                    foreach (var element in innerArr)
-                    {
-                        if (element is JObject elementObj)
-                        {
-                            foreach (var x in GetNestedObjects(elementObj)) { yield return x; }
-                        }
-                    }
-                }
-            }
-        }
+            => obj.GetNestedObjects().Where(x => x.Value<string>("type") == "GameValueContext");
 
         public bool ApplyMigration(JObject obj, IList<string> outMigrationReport)
         {
