@@ -9,7 +9,7 @@ jobs:
   build-mod:
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.10.0.0-beta-playtest-214
+      MODKIT_VERSION: 0.10.0.0-beta-playtest-225
       ECO_BRANCH: playtest
     steps:
     - uses: actions/checkout@v2
