@@ -1,8 +1,5 @@
 ﻿using System;
-using System.IO;
 using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Net;
 using System.Collections.Generic;
 
 using Newtonsoft.Json.Linq;
@@ -27,6 +24,9 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Economy.Money;
     using Gameplay.Economy;
     using Gameplay.Settlements;
+    using Gameplay.Aliases;
+    using Gameplay.Players;
+    using Eco.Gameplay.Placement;
 
     public class ImportContext
     {
@@ -42,19 +42,19 @@ namespace Eco.Mods.CivicsImpExp
             return obj;
         }
 
-        public void Import(BundledCivic bundledCivic, Settlement settlement)
+        public void Import(BundledCivic bundledCivic, Settlement settlement, User importer)
         {
-            IHasID obj;
-            if (!ReferenceMap.TryGetValue(bundledCivic.AsReference, out obj))
+            if (!ReferenceMap.TryGetValue(bundledCivic.AsReference, out IHasID obj))
             {
                 obj = ImportStub(bundledCivic);
             }
+            if (obj is ISettlementAssociated settlementAssociated) { settlementAssociated.Settlement = settlement; }
+            if (obj is IHostedObject hostedObject) { hostedObject.Creator = importer; }
             if (obj is IProposable proposable)
             {
-                proposable.Settlement = settlement;
-                proposable.InitializeDraftProposable();
+                if (proposable.State == ProposableState.Uninitialized) { proposable.InitializeDraftProposable(); }
                 DeserialiseGenericObject(bundledCivic.Data, obj);
-                proposable.SetProposedState(ProposableState.Draft, true, true);
+                proposable.SetProposedState(proposable.State == ProposableState.Uninitialized ? ProposableState.Draft : proposable.State, true, true);
             }
             else
             {
@@ -139,14 +139,14 @@ namespace Eco.Mods.CivicsImpExp
             {
                 JObject obj = token.ToObject<JObject>();
                 string typeName = obj.Value<string>("type");
-                switch (typeName)
+                return typeName switch
                 {
-                    case "Type": return ResolveType(obj.Value<string>("value"));
-                    case "GameValueContext": return DeserialiseGameValueContext(obj, expectedType);
-                    case "GameValueWrapper": return DeserialiseGameValueWrapper(obj, expectedType);
-                    case "GamePickerList": return DeserialiseGamePickerList(obj, expectedType);
-                    default: return DeserialiseGenericObject(obj, expectedType);
-                }
+                    "Type" => ResolveType(obj.Value<string>("value")),
+                    "GameValueContext" => DeserialiseGameValueContext(obj, expectedType),
+                    "GameValueWrapper" => DeserialiseGameValueWrapper(obj, expectedType),
+                    "GamePickerList" => DeserialiseGamePickerList(obj, expectedType),
+                    _ => DeserialiseGenericObject(obj, expectedType),
+                };
             }
             else if (token.Type == JTokenType.Array)
             {
@@ -206,6 +206,10 @@ namespace Eco.Mods.CivicsImpExp
         {
             string typeName = obj.Value<string>("type");
             Type type = ResolveType(typeName);
+            if (type == null)
+            {
+                throw new InvalidOperationException($"Failed to resolve type '{typeName}'");
+            }
             if (typeof(TriggerConfig).IsAssignableFrom(type))
             {
                 return DeserialiseTriggerConfig(obj, type, expectedType);
@@ -346,7 +350,7 @@ namespace Eco.Mods.CivicsImpExp
 
         private void DeserialiseControllerListOrHashSet(object target, JArray token)
         {
-            Type innerElementType = target.GetType().GetGenericArguments()[0];
+            Type innerElementType = target is IClientControlledContainer clientControlledContainer ? clientControlledContainer.Type : target.GetType().GetGenericArguments()[0];
             target.GetType().GetMethod("Clear", BindingFlags.Public | BindingFlags.Instance).Invoke(target, null);
             var addMethod = target.GetType().GetMethod("Add", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { innerElementType }, null);
             foreach (var element in token)
@@ -412,10 +416,23 @@ namespace Eco.Mods.CivicsImpExp
             else if (expectedType.IsAssignableFrom(typeof(GamePickerList)))
             {
                 gamePickerList = new GamePickerList();
-                JObject mustDeriveType = obj.Value<JObject>("mustDeriveType");
-                if (mustDeriveType != null)
+                JObject mustDeriveTypeToken = obj.Value<JObject>("mustDeriveType");
+                if (mustDeriveTypeToken != null)
                 {
-                    gamePickerList.MustDeriveType = DeserialiseValueAsType(mustDeriveType, typeof(Type)) as Type;
+                    gamePickerList.MustDeriveType = DeserialiseValueAsType(mustDeriveTypeToken, typeof(Type)) as Type;
+                }
+            }
+            else if (expectedType.IsAssignableFrom(typeof(GamePickerListAlias)))
+            {
+                gamePickerList = new GamePickerListAlias();
+                JObject mustDeriveTypeToken = obj.Value<JObject>("mustDeriveType");
+                if (mustDeriveTypeToken != null)
+                {
+                    var mustDeriveType = DeserialiseValueAsType(mustDeriveTypeToken, typeof(Type)) as Type;
+                    if (mustDeriveType != typeof(IAlias))
+                    {
+                        throw new InvalidOperationException($"Can't deserialise a GamePickerList with mustDeriveType of '{mustDeriveType.FullName}' into a '{expectedType.FullName}'");
+                    }
                 }
             }
             else

@@ -18,30 +18,7 @@ namespace Eco.Mods.CivicsImpExp.Migrations._0973
             => !string.IsNullOrEmpty(typeName) && ((typeName.StartsWith("Eco.Gameplay.Civics.") && typeName.EndsWith("_LegalAction")) || typeName == "Eco.Gameplay.Civics.SendNotice");
 
         private IEnumerable<JObject> GetVanillaLegalActions(JObject obj)
-            => GetNestedObjects(obj).Where(x => IsVanillaLegalAction(x.Value<string>("type")));
-
-        private IEnumerable<JObject> GetNestedObjects(JObject obj)
-        {
-            foreach (var pair in obj)
-            {
-                if (pair.Value is JObject innerObj)
-                {
-                    yield return innerObj;
-                    foreach (var x in GetNestedObjects(innerObj)) { yield return x; }
-                }
-                else if (pair.Value is JArray innerArr)
-                {
-                    foreach (var element in innerArr)
-                    {
-                        if (element is JObject elementObj)
-                        {
-                            yield return elementObj;
-                            foreach (var x in GetNestedObjects(elementObj)) { yield return x; }
-                        }
-                    }
-                }
-            }
-        }
+            => obj.GetNestedObjects().Where(x => IsVanillaLegalAction(x.Value<string>("type")));
 
         public bool ApplyMigration(JObject obj, IList<string> outMigrationReport)
         {
