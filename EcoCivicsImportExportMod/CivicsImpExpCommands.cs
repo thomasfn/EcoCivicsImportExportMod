@@ -232,7 +232,7 @@ namespace Eco.Mods.CivicsImpExp
         public static async Task Import(IChatClient chatClient, string source, Settlement targetSettlement = null)
         {
             // Check settlement
-            if (FeatureConfig.Obj.SettlementSystemEnabled && targetSettlement == null)
+            if (FeatureConfig.Obj.SettlementEnabled && targetSettlement == null)
             {
                 chatClient.Msg(Localizer.Do($"You must specify a settlement to import into!"));
                 return;
@@ -265,7 +265,7 @@ namespace Eco.Mods.CivicsImpExp
                 chatClient.Msg(Localizer.DoStr("Bundle contains more than 1 constitution, this is not allowed!"));
                 return;
             }
-            if (!FeatureConfig.Obj.SettlementSystemEnabled)
+            if (!FeatureConfig.Obj.SettlementEnabled)
             {
                 if (bundleSettlementCount > 0)
                 {
@@ -283,7 +283,7 @@ namespace Eco.Mods.CivicsImpExp
             var settlementCivicRefs = new HashSet<CivicReference>();
             var settlementCivics = new HashSet<IHasID>();
             var settlementBundledCivic = bundle.Settlement;
-            if (FeatureConfig.Obj.SettlementSystemEnabled && settlementBundledCivic.HasValue)
+            if (FeatureConfig.Obj.SettlementEnabled && settlementBundledCivic.HasValue)
             {
                 var settlementOverwriteCivics = bundle.GetSettlementOverwriteCivics(targetSettlement);
                 foreach (var pair in settlementOverwriteCivics)
@@ -420,7 +420,7 @@ namespace Eco.Mods.CivicsImpExp
         public static async Task BundleInfo(IChatClient chatClient, string source, Settlement targetSettlement = null)
         {
             // Check settlement
-            if (FeatureConfig.Obj.SettlementSystemEnabled && targetSettlement == null)
+            if (FeatureConfig.Obj.SettlementEnabled && targetSettlement == null)
             {
                 chatClient.Msg(Localizer.DoStr("You must specify a settlement to import into!"));
                 return;
@@ -447,7 +447,7 @@ namespace Eco.Mods.CivicsImpExp
                 chatClient.Msg(Localizer.DoStr("Bundle contains more than 1 settlement, this is not allowed!"));
                 return;
             }
-            if (!FeatureConfig.Obj.SettlementSystemEnabled && bundleSettlementCount > 0)
+            if (!FeatureConfig.Obj.SettlementEnabled && bundleSettlementCount > 0)
             {
                 chatClient.Msg(Localizer.DoStr("Bundle is not importable as it contains a settlement and the settlement system is not enabled."));
                 return;
@@ -456,7 +456,7 @@ namespace Eco.Mods.CivicsImpExp
             // Print settlement overwrite civics
             var settlementCivics = new HashSet<CivicReference>();
             var settlementBundledCivic = bundle.Settlement;
-            if (FeatureConfig.Obj.SettlementSystemEnabled && settlementBundledCivic.HasValue)
+            if (FeatureConfig.Obj.SettlementEnabled && settlementBundledCivic.HasValue)
             {
                 var settlementOverwriteCivics = bundle.GetSettlementOverwriteCivics(targetSettlement);
                 settlementCivics.Add(settlementBundledCivic.Value.AsReference);
