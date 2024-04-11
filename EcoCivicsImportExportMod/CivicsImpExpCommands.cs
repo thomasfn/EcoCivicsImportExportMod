@@ -13,6 +13,7 @@ namespace Eco.Mods.CivicsImpExp
     using Shared.IoC;
     using Shared.Items;
     using Shared.Voxel;
+    using Shared.Utils;
 
     using Gameplay.Players;
     using Gameplay.Systems.Messaging.Chat.Commands;
@@ -31,7 +32,6 @@ namespace Eco.Mods.CivicsImpExp
     using Gameplay.Settlements;
     using Gameplay.Systems;
     using Gameplay.Systems.Chat;
-    using Eco.Shared.Utils;
 
     [ChatCommandHandler]
     public static class CivicsImpExpCommands
@@ -49,6 +49,7 @@ namespace Eco.Mods.CivicsImpExp
             {"govaccount",          typeof(GovernmentBankAccount) },
             {"settlement",          typeof(Settlement) },
             {"immigrationpolicy",   typeof(ImmigrationPolicy) },
+            {"injunction",          typeof(Injunction) },
         };
 
         private static readonly IReadOnlyDictionary<Type, string> typeToCivicKey = new Dictionary<Type, string>(
@@ -198,38 +199,54 @@ namespace Eco.Mods.CivicsImpExp
 
         private static int GetUsedSlotsCount(CivicObjectComponent civicObjectComponent, IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = null)
         {
-            int modifier;
-            if (usedSlotsModifierDict == null || !usedSlotsModifierDict.TryGetValue(civicObjectComponent, out modifier)) { modifier = 0; }
+            if (usedSlotsModifierDict == null || !usedSlotsModifierDict.TryGetValue(civicObjectComponent, out int modifier)) { modifier = 0; }
             return civicObjectComponent.UsedSlots + modifier;
         }
 
-        private static WorldObject FindFreeWorldObjectForCivic(Type civicType, Settlement settlement, IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = null, Vector3? nearestTo = null)
-        {
-            var relevantWorldObjects = ServiceHolder<IWorldObjectManager>.Obj.All
+        private static IEnumerable<(WorldObject worldObject, CivicObjectComponent civicObjectComponent)> GetAllCivicWorldObjects()
+            => ServiceHolder<IWorldObjectManager>.Obj.All
                     .Where((worldObject) => worldObject.HasComponent<CivicObjectComponent>())
-                    .Select((worldObject) => (worldObject, worldObject.GetComponent<CivicObjectComponent>()))
-                    .Where((worldObjectAndComp) => worldObjectAndComp.Item2.ObjectType.IsAssignableFrom(civicType) && worldObjectAndComp.Item2.Settlement == settlement)
-                    .Where((worldObjectAndComp) => GetUsedSlotsCount(worldObjectAndComp.Item2, usedSlotsModifierDict) < worldObjectAndComp.Item2.MaxCount);
+                    .SelectMany((worldObject) => worldObject.GetComponents<CivicObjectComponent>().Select(y => (worldObject, civicObjectComponent: y)));
+
+        private static IEnumerable<(WorldObject worldObject, CivicObjectComponent civicObjectComponent)> GetAllCivicWorldObjects(Type civicType, Settlement settlement)
+            => GetAllCivicWorldObjects()
+                .Where((worldObjectAndComp) => worldObjectAndComp.civicObjectComponent.ObjectType.IsAssignableFrom(civicType) && worldObjectAndComp.civicObjectComponent.Settlement == settlement);
+
+        private static (WorldObject worldObject, CivicObjectComponent civicObjectComponent)? FindFreeWorldObjectForCivic(Type civicType, Settlement settlement, IDictionary<CivicObjectComponent, int> usedSlotsModifierDict = null, Vector3? nearestTo = null)
+        {
+            var relevantWorldObjects = GetAllCivicWorldObjects(civicType, settlement)
+                    .Where((worldObjectAndComp) => GetUsedSlotsCount(worldObjectAndComp.civicObjectComponent, usedSlotsModifierDict) < worldObjectAndComp.civicObjectComponent.MaxCount);
+            if (!relevantWorldObjects.Any()) { return null; }
             if (nearestTo != null)
             {
-                relevantWorldObjects = relevantWorldObjects
-                    .OrderBy((worldObjectAndComp) => World.WrappedDistance(worldObjectAndComp.worldObject.Position, nearestTo.Value));
+                return relevantWorldObjects
+                    .MinBy((worldObjectAndComp) => World.WrappedDistance(worldObjectAndComp.worldObject.Position, nearestTo.Value));
             }
-            return relevantWorldObjects.FirstOrDefault().worldObject;
+            return relevantWorldObjects.First();
         }
 
         private static int CountFreeSlotsForCivic(Type civicType, Settlement settlement)
         {
-            return ServiceHolder<IWorldObjectManager>.Obj.All
-                .Where((worldObject) => worldObject.HasComponent<CivicObjectComponent>())
-                .Select((worldObject) => (worldObject, worldObject.GetComponent<CivicObjectComponent>()))
-                .Where((worldObjectAndComp) => worldObjectAndComp.Item2.ObjectType.IsAssignableFrom(civicType) && worldObjectAndComp.Item2.Settlement == settlement)
-                .Select((worldObjectAndComp) => worldObjectAndComp.Item2.MaxCount - worldObjectAndComp.Item2.UsedSlots)
+            return GetAllCivicWorldObjects(civicType, settlement)
+                .Select((worldObjectAndComp) => worldObjectAndComp.civicObjectComponent.MaxCount - worldObjectAndComp.civicObjectComponent.UsedSlots)
                 .Sum();
         }
 
         [ChatSubCommand("Civics", "Imports a civic object from a json file.", ChatAuthorizationLevel.Admin)]
         public static async Task Import(IChatClient chatClient, string source, Settlement targetSettlement = null)
+        {
+            try
+            {
+                await ImportInternal(chatClient, source, targetSettlement);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex.ToString());
+                chatClient.Msg(Localizer.Do($"Encountered exception while running import - check server logs for more details."));
+            }
+        }
+
+        private static async Task ImportInternal(IChatClient chatClient, string source, Settlement targetSettlement = null)
         {
             // Check settlement
             if (FeatureConfig.Obj.SettlementEnabled && targetSettlement == null)
@@ -378,8 +395,8 @@ namespace Eco.Mods.CivicsImpExp
                     continue;
                 }
                 var user = chatClient as User;
-                var worldObject = FindFreeWorldObjectForCivic(obj.GetType(), targetSettlement, usedSlotsModifierDict, user?.Position);
-                if (worldObject == null)
+                var worldObjectAndCompMaybe = FindFreeWorldObjectForCivic(obj.GetType(), targetSettlement, usedSlotsModifierDict, user?.Position);
+                if (worldObjectAndCompMaybe == null)
                 {
                     // This should never happen as we already checked above for free slots and early'd out, but just in case...
                     if (!settlementCivicRefs.Any()) { Importer.Cleanup(importedObjects); }
@@ -387,7 +404,7 @@ namespace Eco.Mods.CivicsImpExp
                     CivicsImpExpPlugin.Obj.LastImport.Clear();
                     return;
                 }
-                var civicObjectComponent = worldObject.GetComponent<CivicObjectComponent>();
+                var (worldObject, civicObjectComponent) = worldObjectAndCompMaybe.Value;
 
                 proposable.AssignHostObject(worldObject);
                 if (usedSlotsModifierDict.TryGetValue(civicObjectComponent, out int currentModifier))
@@ -411,6 +428,19 @@ namespace Eco.Mods.CivicsImpExp
         [ChatSubCommand("Civics", "Undoes the last imported civic bundle. Use with extreme care.", ChatAuthorizationLevel.Admin)]
         public static void UndoImport(IChatClient chatClient)
         {
+            try
+            {
+                UndoImportInternal(chatClient);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex.ToString());
+                chatClient.Msg(Localizer.Do($"Encountered exception while running undoimport - check server logs for more details."));
+            }
+        }
+
+        private static void UndoImportInternal(IChatClient chatClient)
+        {
             Importer.Cleanup(CivicsImpExpPlugin.Obj.LastImport);
             chatClient.Msg(Localizer.Do($"Deleted {CivicsImpExpPlugin.Obj.LastImport.Count} objects from the last import"));
             CivicsImpExpPlugin.Obj.LastImport.Clear();
@@ -418,6 +448,19 @@ namespace Eco.Mods.CivicsImpExp
 
         [ChatSubCommand("Civics", "Prints details about a civic bundle without actually importing anything.", ChatAuthorizationLevel.Admin)]
         public static async Task BundleInfo(IChatClient chatClient, string source, Settlement targetSettlement = null)
+        {
+            try
+            {
+                await BundleInfoInternal(chatClient, source, targetSettlement);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex.ToString());
+                chatClient.Msg(Localizer.Do($"Encountered exception while running bundleinfo - check server logs for more details."));
+            }
+        }
+
+        private static async Task BundleInfoInternal(IChatClient chatClient, string source, Settlement targetSettlement = null)
         {
             // Check settlement
             if (FeatureConfig.Obj.SettlementEnabled && targetSettlement == null)
@@ -543,6 +586,19 @@ namespace Eco.Mods.CivicsImpExp
 
         [ChatSubCommand("Civics", "Fixes all non-removed civics with missing creators.", ChatAuthorizationLevel.Admin)]
         public static void FixMissingCreators(IChatClient chatClient)
+        {
+            try
+            {
+                FixMissingCreatorsInternal(chatClient);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex.ToString());
+                chatClient.Msg(Localizer.Do($"Encountered exception while running fixmissingcreators - check server logs for more details."));
+            }
+        }
+
+        private static void FixMissingCreatorsInternal(IChatClient chatClient)
         {
             if (chatClient is not User user)
             {
