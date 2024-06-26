@@ -1,9 +1,7 @@
-﻿using System;
-
-namespace Eco.Mods.CivicsImpExp
+﻿namespace Eco.Mods.CivicsImpExp
 {
+    using Shared.Logging;
     using Shared.Localization;
-    using Shared.Utils;
 
     public static class Logger
     {
