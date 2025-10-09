@@ -1,5 +1,5 @@
 # Eco Civics Import Export Mod
-A server mod for Eco 11.0 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
+A server mod for Eco 12.0 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
 
 Supported objects:
 - Laws
@@ -128,18 +128,15 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 
 ### Windows
 
-1. Login to the [Eco Website](https://play.eco/) and download the latest modkit
-2. Extract the modkit and copy the dlls from `ReferenceAssemblies` to `eco-dlls` in the root directory (create the folder if it doesn't exist)
-3. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019/2022
-4. Build the `EcoCivicsImportExportMod` project in Visual Studio
-5. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\net7.0`
+1. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019/2022
+2. Build the `EcoCivicsImportExportMod` project in Visual Studio
+3. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\net8.0`
 
 ### Linux
-1. Run `ECO_BRANCH="release" MODKIT_VERSION="0.11.0.0-beta" fetch-eco-reference-assemblies.sh` (change the modkit branch and version as needed)
-2. Enter the `EcoCivicsImportExportMod` directory and run:
+1. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
-3. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/net7.0`
+2. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/net8.0`
 
 ## Building Bundler Tool from Source
 

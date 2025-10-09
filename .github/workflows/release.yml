@@ -9,27 +9,17 @@ jobs:
     name: Build Mod
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.11.1.0-beta-staging-3013
       ECO_BRANCH: staging
     steps:
     - uses: actions/checkout@v4
-    - name: Setup .NET Core 7.0
+    - name: Setup .NET Core 8.0
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '7.0.x'
+        dotnet-version: '8.0.x'
     - name: Fetch dependencies
       run: dotnet restore ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj
       env:
         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
-    - name: Cache Eco dlls
-      id: cache-eco-dlls
-      uses: actions/cache@v2
-      with:
-        path: ./eco-dlls
-        key: ${{ env.MODKIT_VERSION }}-ref-dlls
-    - name: Download Eco dlls
-      if: steps.cache-eco-dlls.outputs.cache-hit != 'true'
-      run: sh fetch-eco-reference-assemblies.sh
     - name: Build
       run: dotnet build ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj --configuration Release --no-restore /p:AssemblyVersion=${{github.event.release.tag_name}}
       env:
@@ -38,7 +28,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: mod-binaries-${{github.event.release.tag_name}}
-        path: EcoCivicsImportExportMod/bin/Release/net7.0/EcoCivicsImportExportMod.*
+        path: EcoCivicsImportExportMod/bin/Release/net8.0/EcoCivicsImportExportMod.*
   build-bundler-tool:
     name: Build Bundler Tool
     runs-on: windows-latest
