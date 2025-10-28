@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eco.ReferenceAssemblies" Version="0.12.0-beta-release-905" />
+    <PackageReference Include="Eco.ReferenceAssemblies" Version="0.12.0.3-beta-release-924" />
     <PackageReference Include="NetFabric.Hyperlinq.Abstractions" Version="1.3.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
