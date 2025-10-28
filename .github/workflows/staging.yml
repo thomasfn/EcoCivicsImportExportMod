@@ -9,42 +9,32 @@ jobs:
   build-mod:
     runs-on: ubuntu-latest
     env:
-      MODKIT_VERSION: 0.11.0.2-beta-release-707
       ECO_BRANCH: staging
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup .NET Core 7.0
-      uses: actions/setup-dotnet@v1
+    - uses: actions/checkout@v4
+    - name: Setup .NET Core 8.0
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '7.0.x'
+        dotnet-version: '8.0.x'
     - name: Fetch dependencies
       run: dotnet restore ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj
       env:
         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
-    - name: Cache Eco dlls
-      id: cache-eco-dlls
-      uses: actions/cache@v2
-      with:
-        path: ./eco-dlls
-        key: ${{ env.MODKIT_VERSION }}-ref-dlls
-    - name: Download Eco dlls
-      if: steps.cache-eco-dlls.outputs.cache-hit != 'true'
-      run: sh fetch-eco-reference-assemblies.sh
     - name: Build
       run: dotnet build ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj --configuration Release --no-restore
       env:
         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
     - name: Upload build artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: mod-binaries-staging
-        path: EcoCivicsImportExportMod/bin/Release/net7.0/EcoCivicsImportExportMod.*
+        path: EcoCivicsImportExportMod/bin/Release/net8.0/EcoCivicsImportExportMod.*
   build-bundler-tool:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Setup .NET Core 5.0
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '5.0.201'
     - name: Fetch dependencies
@@ -58,7 +48,7 @@ jobs:
     - name: Archive
       run: 7z a EcoCivicsImportExportMod.Bundler/bin/EcoCivicsImportExportMod.Bundler.zip ./EcoCivicsImportExportMod.Bundler/bin/Release/net5.0-windows/*
     - name: Upload build artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: bundler-tool-binaries-staging
         path: EcoCivicsImportExportMod.Bundler/bin/EcoCivicsImportExportMod.Bundler.zip
