@@ -12,10 +12,10 @@ jobs:
       ECO_BRANCH: staging
     steps:
     - uses: actions/checkout@v4
-    - name: Setup .NET Core 8.0
+    - name: Setup .NET Core 10.0
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '10.0.x'
     - name: Fetch dependencies
       run: dotnet restore ./EcoCivicsImportExportMod/EcoCivicsImportExportMod.csproj
       env:
@@ -28,7 +28,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: mod-binaries-${{github.event.release.tag_name}}
-        path: EcoCivicsImportExportMod/bin/Release/net8.0/EcoCivicsImportExportMod.*
+        path: EcoCivicsImportExportMod/bin/Release/net10.0/EcoCivicsImportExportMod.*
   build-bundler-tool:
     name: Build Bundler Tool
     runs-on: windows-latest

@@ -14,7 +14,7 @@ namespace Eco.Mods.CivicsImpExp.Migrations
     public class MigratorV1 : ICivicsImpExpMigratorV1
     {
         private static IEnumerable<ICivicsImpExpMigratorV1> InternalMigrators
-            => typeof(ICivicsImpExpMigratorV1).ConcreteTypesWithInteface()
+            => typeof(ICivicsImpExpMigratorV1).ConcreteTypesWithInterface()
                 .Except(new Type[] { typeof(MigratorV1), typeof(ExternalMigratorV1) })
                 .Select(t => Activator.CreateInstance(t) as ICivicsImpExpMigratorV1);
 
