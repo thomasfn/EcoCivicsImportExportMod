@@ -1,5 +1,5 @@
 # Eco Civics Import Export Mod
-A server mod for Eco 12.0 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
+A server mod for Eco 14.0 that allows admins to export the supported civics (listed below) from a server to json files, where they can be copied to another server and re-imported.
 
 Supported objects:
 - Laws
@@ -65,8 +65,10 @@ For non-proposable objects, e.g. bank accounts or appointed titles, the state ar
 ### Importing Civics
 The import command will attempt to deserialise a civic object from the specified json file. If it fails at any stage, the civic object (if it managed to created one) will be immediately destroyed with no side effects. The file must be placed in the "civics" folder in the server's working directory. Alternatively, a download URL may be specified.
 
-`/civics import <filename-or-url>`
-e.g. `/civics import law-10.json`
+`/civics import <filename-or-url>,<settlement>`
+e.g. `/civics import law-10.json,My Town`
+
+If the server has settlements turned off, the settlement argument may be omitted.
 
 The civic object will be given draft status with the command executor as the owner, and put in the first available civic slot (e.g. a law will go to the first available Court). If there are no slots available, the command will fail. The executor of the command should have civic privileges to propose changes to civics of that type, or they may not be able to actually bring the imported civic to life.
 
@@ -85,8 +87,8 @@ A bank account can be exported/imported as a civic if it's created as a Governme
 ### Importing Bundles
 A bundle is a number of civics that have been previously exported by the plugin, grouped up into a single file. This bundle can be imported via the same import command as single civics. When importing a bundle, all civics contained within the bundle are imported in one go, saving the need to run the command over and over again during workloads that involve importing a large number of civics (for example an entire government structure). Bundles can be assembled manually or using the included bundler tool (see [Bundler Tool](#bundler-tool)).
 
-`/civics import <filename-or-url>`
-e.g. `/civics import my-bundle.json`
+`/civics import <filename-or-url>,<settlement>`
+e.g. `/civics import my-bundle.json,My Town`
 
 A bundle can only be imported if all dependencies of that bundle are present beforehand. The plugin will not import _any_ civics from the bundle if some references can't be resolved. The bundle info command will print details about the bundle, including any dependencies and whether or not they could be resolved, without actually attempting an import - e.g. it is safe to run with no side effects.
 
@@ -128,21 +130,21 @@ Once the bundle has been assembled to your satisfaction, simply save it to the s
 
 ### Windows
 
-1. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019/2022
+1. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019 (or later)
 2. Build the `EcoCivicsImportExportMod` project in Visual Studio
-3. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\net8.0`
+3. Find the artifact in `EcoCivicsImportExportMod\bin\{Debug|Release}\net10.0`
 
 ### Linux
 1. Enter the `EcoCivicsImportExportMod` directory and run:
 `dotnet restore`
 `dotnet build`
-2. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/net8.0`
+2. Find the artifact in `EcoCivicsImportExportMod/bin/{Debug|Release}/net10.0`
 
 ## Building Bundler Tool from Source
 
 ### Windows
 
-1. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019/2022
+1. Open `EcoCivicsImportExportMod.sln` in Visual Studio 2019 (or later)
 2. Build the `EcoCivicsImportExportMod.Bundler` project in Visual Studio
 3. Find the artifact in `EcoCivicsImportExportMod.Bundler\bin\{Debug|Release}\net5.0-windows`
 
