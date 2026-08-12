@@ -28,7 +28,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: mod-binaries-${{github.event.release.tag_name}}
-        path: EcoCivicsImportExportMod/bin/Release/net8.0/EcoCivicsImportExportMod.*
+        path: EcoCivicsImportExportMod/bin/Release/net10.0/EcoCivicsImportExportMod.*
   build-bundler-tool:
     name: Build Bundler Tool
     runs-on: windows-latest
